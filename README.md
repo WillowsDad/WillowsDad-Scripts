@@ -17,5 +17,6 @@ Features: (TREES are PINK, BANKS are YELLOW)
     Trees are PINK
     Bank is Yellow
     Banks is set to "Deposit All"
+    Bank and Tree are in screen window
   
 ```
