@@ -307,7 +307,7 @@ class OSRSWDWoodcutting(OSRSBot):
             color: color to look for
         Returns:
             None/Void"""
-        random_x = random.randint(90, 180) 
+        random_x = random.randint(120, 270) 
         start_time = time.time() # lets make sure we don't wait too long
 
         # chance for x to be negative
