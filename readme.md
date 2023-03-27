@@ -5,7 +5,7 @@
 | [Overview](#overview)           | [Features](#features)     |                               |
 | [Setup](#setup)                 | [Break System](#break-system) | [AFK-Feature](#afk-feature) |
 | [Runelite Properites Profile](#runelite-properites-profile) | [Bots](#bots) | [To-Do](#to-do) |
-| [WillowsDad Woodcutting](#willowsdad-woodcutting) | [Ultra-Compost](#ultra-compost) | [Degriming](#degriming) |
+| [Ultra-Compost](#ultra-compost) | [Degriming](#degriming) |
 
 
 
