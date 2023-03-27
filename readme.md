@@ -26,7 +26,7 @@ from .WillowsDad.WDUltraCompost import OSRSWDUltraCompostMaker
 from .WillowsDad.WDDegrimer import OSRSWDDegrimer
 from .WillowsDad.WillowsDad_bot import WillowsDadBot
 ```
-- Make the follow ***2*** changes to `\OSRS-Bot-COLOR\src\OSBC.py`
+- Make the following ***2*** changes to `\OSRS-Bot-COLOR\src\OSBC.py`
 ![](osbcmodification1.png) ![](osbcmodification2.png)
 - Now all the bots should show up next time you load OSBC!
 - All the needed PNGs are included in the folder already.
