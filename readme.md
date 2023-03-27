@@ -45,7 +45,7 @@ Banks should always be tagged yellow unless you change the code
 This is a simple Woodcutting bot that can either power chop, or bank if bank requires no pathing (both trees and bank are in view).
 #### Features and Setup
 - Banks should be tagged yellow
-- Trees should be tagge pink
+- Trees should be tagged pink
 - Bank deposit settings should be set to "All"
 - Can use dragon axe special
 - Only tested banking areas are
@@ -60,7 +60,7 @@ This is a *basic* Ultra-Compost script. I have made 25m from it so far.
 - Bank deposit settings should be set to "All"
 - Expects all the ashes to be in inventory already.
 - Quits on timer or when no more materials.
-- ***Afk feature*** doesn't always switch screens do to animation issues. Do not recommend using afk with this script, feel free to test it and change.
+- ***Afk feature*** doesn't always switch screens due to animation issues. Do not recommend using afk with this script, feel free to test it and change.
 - Recommend moving ingredients to a new tab.
 
 ### Degriming
