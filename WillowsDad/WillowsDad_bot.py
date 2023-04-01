@@ -309,7 +309,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         # move mouse to bank and click
         self.mouse.move_to(bank.random_point())
 
-        self.check_text(bank, ["Bank", "Deposit"], [clr.WHITE, clr.OFF_WHITE, clr.CYAN])
+        self.check_text(bank, ["Bank", "Deposit"])
 
         self.mouse.click()
 
