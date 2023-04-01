@@ -518,8 +518,8 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
 
         # move mouse each slot and click to deposit all
         for slot in slot_list:
-            if self.check_text(slot, "All"):
-                self.mouse.click()
+            self.check_text(self.win.inventory_slots[slot], "All")
+            self.mouse.click()
             time.sleep(self.random_sleep_length())
 
         return
