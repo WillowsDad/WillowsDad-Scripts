@@ -8,10 +8,10 @@ import utilities.imagesearch as imsearch
 import pyautogui as pag
 
 
-class OSRSWDWoodcutting(WillowsDadBot):
+class OSRSWDFishing(WillowsDadBot):
     def __init__(self):
-        bot_title = "WillowsDad Woodcutting"
-        description = """Chops wood and banks at supported locations."""
+        bot_title = "WillowsDad Fishing"
+        description = """Fishes at supported locations."""
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)
         self.running_time = 60
@@ -19,9 +19,8 @@ class OSRSWDWoodcutting(WillowsDadBot):
         self.afk_train = True
         self.delay_min =0.37
         self.delay_max = .67
-        self.log_type = ids.MAGIC_LOGS
-        self.power_chopping = False
-        self.dragon_special = False
+        self.style = "Bait"
+        self.power_fishing = False
 
 
     def create_options(self):
@@ -32,9 +31,8 @@ class OSRSWDWoodcutting(WillowsDadBot):
         unpack the dictionary of options after the user has selected them.
         """
         super().create_options()
-        self.options_builder.add_dropdown_option("log_type", "What type of logs?", ["Normal", "Oak", "Willow", "Maple", "Yew", "Magic"])
-        self.options_builder.add_checkbox_option("power_chopping", "Power Chopping? Drops everything in inventory.", [" "])
-        self.options_builder.add_checkbox_option("dragon_special", "Use Dragon Axe Special?", [" "])
+        self.options_builder.add_dropdown_option("style", "What type of fishing?", ["Fly", "Bait", "Harpoon", "Net", "Cage"])
+        self.options_builder.add_checkbox_option("power_fishing", "Power Fishing? Drops everything in inventory.", [" "])
 
     def save_options(self, options: dict):
         """
@@ -44,23 +42,19 @@ class OSRSWDWoodcutting(WillowsDadBot):
         """
         super().save_options(options)
         for option in options:
-            if option == "log_type":
-                if options[option] == "Normal":
-                    self.log_type = ids.logs
-                elif options[option] == "Oak":
-                    self.log_type = ids.OAK_LOGS
-                elif options[option] == "Willow":
-                    self.log_type = ids.WILLOW_LOGS
-                elif options[option] == "Maple":
-                    self.log_type = ids.MAPLE_LOGS
-                elif options[option] == "Yew":
-                    self.log_type = ids.YEW_LOGS
-                elif options[option] == "Magic":
-                    self.log_type = ids.MAGIC_LOGS
-            elif option == "power_chopping":
-                self.power_chopping = options[option] != []
-            elif option == "dragon_special":
-                self.dragon_special = options[option] != []
+            if option == "style":
+                if options[option] == "Fly":
+                    self.style = "Fly"
+                elif options[option] == "Bait":
+                    self.style = "Bait"
+                elif options[option] == "Harpoon":
+                    self.style = "Harpoon"
+                elif options[option] == "Net":
+                    self.style = "Net"
+                elif options[option] == "Cage":
+                    self.style = "Cage"
+            elif option == "power_fishing":
+                self.power_fishing = options[option] != []
             else:
                 self.log_msg(f"Unexpected option: {option}")
 
@@ -68,9 +62,8 @@ class OSRSWDWoodcutting(WillowsDadBot):
         self.log_msg(f"Bot will{'' if self.take_breaks else ' not'} take breaks.")
         self.log_msg(f"Bot will{'' if self.afk_train else ' not'} train like you're afk on another tab.")
         self.log_msg(f"Bot will wait between {self.delay_min} and {self.delay_max} seconds between actions.")
-        self.log_msg(f"Bot will{'' if self.power_chopping else ' not'} power chop.")
-        self.log_msg(f"Bot will cut {options['log_type']} logs.")
-        self.log_msg(f"Bot will{'' if self.dragon_special else ' not'} use dragon axe special.")
+        self.log_msg(f"Bot will{'' if self.power_fishing else ' not'} power chop.")
+        self.log_msg(f"Bot will cut {options['style']} logs.")
         self.log_msg("Options set successfully.")
         self.options_set = True
 
@@ -90,7 +83,6 @@ class OSRSWDWoodcutting(WillowsDadBot):
             percentage = (self.multiplier * .01)  # this is the percentage chance of a break
             deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
             self.roll_chance_passed = False
-            self.spec_energy = self.get_special_energy()
 
             # check if inventory is full
             if self.api_m.get_is_inv_full():
@@ -98,25 +90,17 @@ class OSRSWDWoodcutting(WillowsDadBot):
 
             # Check if idle
             if self.api_m.get_is_player_idle():
+                self.log_msg("Fishing...")
+                self.go_fish()
 
-                self.pick_up_nests()
+            if self.afk_train and self.is_fishing():
 
-                if self.spec_energy >= 100 and self.dragon_special:
-                    self.activate_special()
-                    self.log_msg("Dragon Axe Special Activated")
-
-                self.log_msg("Chopping trees...")
-                self.chop_trees(percentage)
-
-            if self.is_woodcutting():
-                self.sleep(percentage)
-                if self.afk_train and self.is_focused:
+                if self.is_focused:
                     self.switch_window()
+                self.sleep(percentage)
+
+     
                 
-
-
-
-
             # -- End bot actions --
             if self.take_breaks:
                 self.check_break(runtime, percentage, minutes_since_last_break, seconds)
@@ -141,19 +125,16 @@ class OSRSWDWoodcutting(WillowsDadBot):
                 None"""
         super().setup()
         self.idle_time = 0
-        self.deposit_ids = [ids.BIRD_NEST, ids.BIRD_NEST_5071, ids.BIRD_NEST_5072, ids.BIRD_NEST_5073, ids.BIRD_NEST_5074, ids.BIRD_NEST_5075, ids.BIRD_NEST_7413, ids.BIRD_NEST_13653, ids.BIRD_NEST_22798, ids.BIRD_NEST_22800, self.log_type]
+        self.deposit_ids = [ids.BIRD_NEST, ids.BIRD_NEST_5071, ids.BIRD_NEST_5072, ids.BIRD_NEST_5073, ids.BIRD_NEST_5074, ids.BIRD_NEST_5075, ids.BIRD_NEST_7413, ids.BIRD_NEST_13653, ids.BIRD_NEST_22798, ids.BIRD_NEST_22800, self.style]
         
         # Setup Checks for axes and tagged objects
-        self.check_axe()
+        self.check_equipment()
 
-        if not self.power_chopping:
-            if not self.get_nearest_tag(clr.YELLOW):
-                found = self.adjust_camera(clr.YELLOW)
-                if not found:
-                    self.log_msg("Bank booths should be tagged with yellow, and in screen view. Please fix this.")
-                    self.stop()
-            self.check_bank_settings()
-            
+        if not self.get_nearest_tag(clr.YELLOW) and not self.power_fishing:
+            found = self.adjust_camera(clr.YELLOW)
+            if not found:
+                self.log_msg("Bank booths should be tagged with yellow, and in screen view. Please fix this.")
+                self.stop()
 
         if not self.get_nearest_tag(clr.PINK):
             found = self.adjust_camera(clr.PINK)
@@ -161,6 +142,7 @@ class OSRSWDWoodcutting(WillowsDadBot):
                 self.log_msg("Trees should be tagged with pink, and in screen view. Please fix this.")
                 self.stop()
         
+        self.check_bank_settings()
 
 
     def check_bank_settings(self):
@@ -169,40 +151,30 @@ class OSRSWDWoodcutting(WillowsDadBot):
                 None
             Returns:
                 None"""
-        self.open_bank()
-        self.close_bank()
+        # self.open_bank()
+        # self.close_bank()
 
 
-    def pick_up_nests(self):
-
-        if self.api_m.get_is_inv_full():
-            return
-        """Picks up loot while there is loot on the ground"""
-        while self.pick_up_loot(["Bird nest", "Clue nest (easy)", "Clue nest (medium)","Clue nest (hard)","Clue nest (elite)"]):
-            curr_inv = len(self.api_s.get_inv())
-            self.log_msg("Picking up loot...")
-            for _ in range(5):  # give the bot 5 seconds to pick up the loot
-                if len(self.api_s.get_inv()) != curr_inv:
-                    time.sleep(self.random_sleep_length())
-                    break
-                time.sleep(self.random_sleep_length(.8, 1.3))
-
-
-    def is_woodcutting(self):
+    def is_fishing(self):
         """
         This will check if the player is currently woodcutting.
         Returns: boolean
         Args: None
         """
         # get the current player animation
-        woodcutting_animation_list = [animation.WOODCUTTING_3A_AXE, animation.WOODCUTTING_BRONZE, animation.WOODCUTTING_IRON, animation.WOODCUTTING_STEEL, animation.WOODCUTTING_BLACK, animation.WOODCUTTING_MITHRIL, animation.WOODCUTTING_ADAMANT, animation.WOODCUTTING_RUNE, animation.WOODCUTTING_DRAGON]
+        fishing_animation_list = [
+            animation.FISHING_BARBARIAN_ROD, animation.FISHING_BARBTAIL_HARPOON, animation.FISHING_BIG_NET, animation.FISHING_CAGE,
+            animation.FISHING_CRYSTAL_HARPOON, animation.FISHING_DRAGON_HARPOON, animation.FISHING_HARPOON, animation.FISHING_NET
+            ]
         current_animation = self.api_m.get_animation_id()
 
         # check if the current animation is woodcutting
-        return current_animation in woodcutting_animation_list
+        if current_animation not in fishing_animation_list:
+            return False
+        return True
         
 
-    def chop_trees(self, percentage):
+    def go_fish(self):
         """
         This will chop trees.
         Returns: void
@@ -219,14 +191,14 @@ class OSRSWDWoodcutting(WillowsDadBot):
 
         while True: 
             self.idle_time = time.time()
-            if tree := self.get_nearest_tag(clr.PINK):
-                self.mouse.move_to(tree.random_point())
-                self.check_text(tree, "Chop")
+            if fishing_spot := self.get_nearest_tag(clr.PINK):
+                self.mouse.move_to(fishing_spot.random_point())
+                self.check_text(fishing_spot, "Fishing", [clr.OFF_YELLOW])
                 self.mouse.click()
                 time.sleep(self.random_sleep_length())
                 break
             else:
-                self.log_msg("No tree found, waiting for a tree to spawn...")
+                self.log_msg("No fishing spot found...")
                 time.sleep(self.random_sleep_length() * 3)
                 if int(time.time() - self.idle_time) > 32:
                     self.adjust_camera(clr.PINK, 1)
@@ -237,10 +209,10 @@ class OSRSWDWoodcutting(WillowsDadBot):
 
     def bank_or_drop(self, deposit_slots):
         """
-        This will either bank or drop items depending on the power_chopping setting.
+        This will either bank or drop items depending on the power_fishing setting.
         Returns: void
         Args: None"""
-        if not self.power_chopping:
+        if not self.power_fishing:
             end_time = time.time() + 5
             while time.time() < end_time:
                 if not self.is_runelite_focused():   
@@ -249,27 +221,25 @@ class OSRSWDWoodcutting(WillowsDadBot):
                     break
             self.open_bank()
             self.deposit_items(deposit_slots)
-            time.sleep(self.random_sleep_length())
             self.close_bank()
         else:
-            self.drop_all()
+            self.drop_all(skip_slots=[0])
 
-
-    def check_axe(self):
+    def check_equipment(self):
         """
         Stops script if no axe is equipped.
         Returns: none
         Args: None
         """
-        axe_ids = [ids.BRONZE_AXE, ids.IRON_AXE, ids.STEEL_AXE, ids.BLACK_AXE, ids.MITHRIL_AXE, ids.ADAMANT_AXE, ids.RUNE_AXE, ids.DRAGON_AXE, ids.INFERNAL_AXE, ids.DRAGON_PICKAXE, ids.CRYSTAL_AXE]
+        fishing_tools = [ids.FISHING_ROD, ids.HARPOON, ids.FLY_FISHING_ROD,ids.SMALL_FISHING_NET, ids.LOBSTER_POT, ids.SMALL_FISHING_NET]
+        fishing_bait = [ids.FISHING_BAIT, ids.FEATHER]
 
-        if not self.api_m.get_is_item_equipped(ids.DRAGON_AXE) and self.dragon_special:
-            self.log_msg("You need dragon axe equipped according to your settings, quitting bot.")
+        if not self.api_m.get_if_item_in_inv(fishing_tools):
+            self.log_msg("No fishing tool or bait in inventory...")
             self.stop()
-        time.sleep(self.random_sleep_length())
-        if not self.api_m.get_is_item_equipped(
-            axe_ids
-        ) and not self.api_m.get_if_item_in_inv(axe_ids):
-            self.log_msg("No axe in inventory, or equipped. Please get an axe and start script again")
+        if self.style in ["Fly", "Bait"] and not self.api_m.get_if_item_in_inv(
+            fishing_bait
+        ):
+            self.log_msg("No fishing bait in inventory...")
             self.stop()
         

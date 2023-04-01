@@ -220,7 +220,7 @@ class OSRSWDDegrimer(WillowsDadBot):
         # Define inventory slot indices in custom "S" motion, top to bottom and then bottom to top
         s_motion_indices = [0, 4, 8, 12, 16, 20, 24, 25, 21, 17, 13, 9, 5, 1, 2, 6, 10, 14, 18, 22, 26, 27, 23, 19, 15, 11, 7, 3]
 
-        # Get unique items in inventory
+        # Get all items in inventory
         items = self.api_m.get_inv_item_indices(self.withdraw_ids)
 
         # Filter s_motion_indices to include only those indices that are in the items list

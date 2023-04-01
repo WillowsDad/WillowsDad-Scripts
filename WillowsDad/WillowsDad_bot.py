@@ -30,8 +30,8 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         self.options_builder.add_slider_option("running_time", "How long to run (minutes)?", 1, 360)
         self.options_builder.add_checkbox_option("afk_train", "Train like you're afk on another tab?", [" "])
         self.options_builder.add_checkbox_option("take_breaks", "Take breaks?", [" "])
-        self.options_builder.add_slider_option("delay_min", "How long to take between actions (min) (MiliSeconds)?", 300,3000)
-        self.options_builder.add_slider_option("delay_max", "How long to take between actions (max) (MiliSeconds)?", 350,3000)
+        self.options_builder.add_slider_option("delay_min", "How long to take between actions (min) (MiliSeconds)?", 300,1200)
+        self.options_builder.add_slider_option("delay_max", "How long to take between actions (max) (MiliSeconds)?", 350,1200)
 
 
     def save_options(self, options: dict):
@@ -323,7 +323,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         return
     
 
-    def check_text(self, object: RuneLiteObject, text, color):
+    def check_text(self, object: RuneLiteObject, text):
         """
         calls mouseover text in a loop
         Returns: void
@@ -512,23 +512,16 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         if slot_list == -1:
             self.log_msg("No items to deposit, continuing...")
             return
-        
+
         if slot_list == 0:   # if theres only one item, it is the first slot
             slot_list = [0]
 
         # move mouse each slot and click to deposit all
         for slot in slot_list:
-            self.mouse.move_to(self.win.inventory_slots[slot].random_point())
-            if not self.mouseover_text(contains="All", color=clr.OFF_WHITE):
-                self.log_msg("Bank deposit settings are not set to 'Deposit All', or something is wrong, trying again")
-                try_count += 1
-            else:
+            if self.check_text(slot, "All"):
                 self.mouse.click()
-                time.sleep(self.random_sleep_length())
-            if try_count > 5:
-                self.log_msg(f"Tried to deposit {try_count} times, quitting bot so you can fix it...")
-                self.stop()
-                
+            time.sleep(self.random_sleep_length())
+
         return
 
 
