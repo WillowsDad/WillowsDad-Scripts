@@ -27,7 +27,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
 
 
     def create_options(self):
-        self.options_builder.add_slider_option("running_time", "How long to run (minutes)?", 1, 500)
+        self.options_builder.add_slider_option("running_time", "How long to run (minutes)?", 1, 360)
         self.options_builder.add_checkbox_option("afk_train", "Train like you're afk on another tab?", [" "])
         self.options_builder.add_checkbox_option("take_breaks", "Take breaks?", [" "])
         self.options_builder.add_slider_option("delay_min", "How long to take between actions (min) (MiliSeconds)?", 300,3000)
@@ -85,6 +85,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         self.api_s = StatusSocket()
         self.spec_energy = self.get_special_energy()
         self.last_runtime = 0
+        self.safety_squares = self.get_all_tagged_in_rect(self.win.game_view ,clr.CYAN)
 
 
     def is_runelite_focused(self):
@@ -139,7 +140,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         if self.breaks_skipped > 0:
             self.roll_chance_passed = True
             self.multiplier += self.breaks_skipped * .25
-            self.log_msg(f"Skipped {self.breaks_skipped} break rolls while afk, percentage chance is now {round(percentage * 100)}%")
+            self.log_msg(f"Skipped {self.breaks_skipped} break rolls while afk, percentage chance is now {round((self.multiplier * .01) * 100)}%")
 
 
     def random_sleep_length(self, delay_min=0, delay_max=0):
@@ -157,16 +158,15 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         Args: None
         """
         # Get the currently focused window
-        current_window = pag.getActiveWindow()
+        old_window = pag.getActiveWindow()
 
         pag.hotkey("alt", "tab")
-        time.sleep(self.random_sleep_length())
-
         new_window = pag.getActiveWindow()
+
         self.log_msg(f"Switched to window: {new_window.title}.")
 
         self.is_focused = "RuneLite" in new_window.title
-        if current_window.title == new_window.title:
+        if old_window.title == new_window.title:
             self.log_msg("Window not switched, something is wrong, quitting bot.")
             self.stop()
 
@@ -222,7 +222,8 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
 
         self.take_random_break(minutes_since_last_break)
 
-    def take_menu_break(self):  # sourcery skip: extract-duplicate-method
+
+    def take_menu_break(self):
         """
         This will take a random menu break [Skills, Combat].]
         Returns: void
@@ -235,7 +236,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             self.log_msg("Taking a Sklls Tab break...")
             self.mouse.move_to(self.win.cp_tabs[1].random_point())
             time.sleep(self.random_sleep_length())
-            if self.mouseover_text(contains="Skills"):
+            if self.mouseover_text(contains="Skills", color=clr.OFF_WHITE):
                 self.mouse.click()
                 self.mouse.move_to(self.win.control_panel.random_point())
                 time.sleep(break_time)
@@ -243,7 +244,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
                 # go back to inventory
                 self.mouse.move_to(self.win.cp_tabs[3].random_point())
                 time.sleep(self.random_sleep_length())
-                if self.mouseover_text(contains="Inventory"):
+                if self.mouseover_text(contains="Inventory", color=clr.OFF_WHITE):
                     self.mouse.click()
             else:
                 self.log_msg("Skills tab not found, break function didn't work...")
@@ -252,7 +253,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             self.log_msg("Taking an Equipment menu break...")
             self.mouse.move_to(self.win.cp_tabs[4].random_point())
             time.sleep(self.random_sleep_length())
-            if self.mouseover_text(contains="Worn"):
+            if self.mouseover_text(contains="Worn", color=clr.OFF_WHITE):
                 self.mouse.click()
 
                 self.mouse.move_to(self.win.control_panel.random_point())
@@ -260,7 +261,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
 
                 # go back to inventory
                 self.mouse.move_to(self.win.cp_tabs[3].random_point())
-                if self.mouseover_text(contains="Inventory"):
+                if self.mouseover_text(contains="Inventory", color=clr.OFF_WHITE):
                     self.mouse.click()
 
             else:
@@ -301,38 +302,52 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         Args: 
             deposit_slots (int) - Inventory position of each different item to deposit.
         """
-        search_tries = 1
-
         # move mouse one of the closes 2 banks
 
         bank = self.choose_bank()
 
         # move mouse to bank and click
         self.mouse.move_to(bank.random_point())
-        time.sleep(self.random_sleep_length(.8, 1.2))
 
-        # search up to 5 times for mouseover text "bank"
-        while not self.mouseover_text(contains="Bank"):
-            self.log_msg(f"Bank not found, trying again. Try #{search_tries}.")
-            self.mouse.move_to(bank.random_point())
-            time.sleep(self.random_sleep_length(1,1.9))
-
-            if search_tries > 5:
-                self.log_msg(f"Did not see 'Bank' in mouseover text after {search_tries} searches, quitting bot so you can fix it...")
-                self.stop()
-            search_tries += 1
+        self.check_text(bank, ["Bank", "Deposit"], [clr.WHITE, clr.OFF_WHITE, clr.CYAN])
 
         self.mouse.click()
 
         wait_time = time.time()
-        while not self.api_m.get_is_player_idle():
+        while not self.is_bank_open():
             # if we waited for 10 seconds, break out of loop
-            if time.time() - wait_time > 15:
+            if time.time() - wait_time > 20:
                 self.log_msg("We clicked on the bank but player is not idle after 10 seconds, something is wrong, quitting bot.")
                 self.stop()
             time.sleep(self.random_sleep_length(.8, 1.3))
         return
     
+
+    def check_text(self, object: RuneLiteObject, text, color):
+        """
+        calls mouseover text in a loop
+        Returns: void
+        Args: None
+        """
+        if not isinstance(text, list):
+            text = [text]
+
+        time_searching = time.time()
+        search_tries = 1
+
+        while all(txt not in self.mouseover_text() for txt in text):
+            time.sleep(self.random_sleep_length(.1, .2))
+
+            if time.time() - time_searching > 2:
+                self.mouse.move_to(object.random_point())
+
+            if time.time() - time_searching > 4:
+                msg = f"Did not see any of {text} in mouseover text after {search_tries} searches, quitting bot so you can fix it..."
+                self.log_msg(msg)
+                self.stop()
+
+            search_tries += 1
+
 
     def choose_bank(self):
         """
@@ -350,8 +365,39 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
                 return banks[0] if rd.random_chance(.74) else banks[1]
         else:
             self.log_msg("No banks found, trying to adjust camera...")
-            self.adjust_camera(clr.YELLOW)
+            if not self.adjust_camera(clr.YELLOW):
+                self.log_msg("No banks found, quitting bot...")
+                self.stop()
             return (self.choose_bank())
+    
+
+    def choose_safety_square(self):
+        """
+        Choose one of the safe squares to click
+        Returns: Rect object
+        Args: None
+        """
+        if self.safety_squares:
+            return random.choice(self.safety_squares)
+        
+        self.log_msg("No Cyan safety squares found, trying to adjust camera...")
+        return
+        
+
+    def go_to_safety_square(self):
+        """
+        Go to a safety square to search for next object to click
+        Returns: void
+        Args: None
+        """
+        if safety_square := self.choose_safety_square():
+            self.mouse.move_to(safety_square.random_point())
+            self.mouse.click()
+            # wait till idle
+            while not self.api_m.get_is_player_idle():
+                time.sleep(self.random_sleep_length(.2, .4))
+                return
+        return
     
 
     def adjust_camera(self, color, timeout=4):
@@ -361,7 +407,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             color: color to look for
         Returns:
             None/Void"""
-        random_x = random.randint(120, 270) 
+        random_x = random.randint(90, 180) 
         start_time = time.time() # lets make sure we don't wait too long
 
         # chance for x to be negative
@@ -380,9 +426,9 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
                 self.log_msg(f"Could not find highlighted color in {timeout} seconds...")
                 camera_thread.stop()    
                 return False
-            time.sleep(self.random_sleep_length(.35, .65))
+            time.sleep(self.random_sleep_length(.1, .2))
         camera_thread.stop()
-        time.sleep(self.random_sleep_length(.6,.9))
+        time.sleep(self.random_sleep_length())
         return True
 
 
@@ -470,15 +516,10 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         if slot_list == 0:   # if theres only one item, it is the first slot
             slot_list = [0]
 
-        # Make sure bank is open
-        if not self.is_bank_open():
-            self.log_msg("Bank is not open, cannot deposit items. Quitting bot...")
-            self.stop()
-
         # move mouse each slot and click to deposit all
         for slot in slot_list:
             self.mouse.move_to(self.win.inventory_slots[slot].random_point())
-            if not self.mouseover_text(contains=["All"]):
+            if not self.mouseover_text(contains="All", color=clr.OFF_WHITE):
                 self.log_msg("Bank deposit settings are not set to 'Deposit All', or something is wrong, trying again")
                 try_count += 1
             else:

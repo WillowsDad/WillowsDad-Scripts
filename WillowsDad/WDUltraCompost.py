@@ -71,17 +71,18 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
                 self.open_bank()
                 self.deposit_items(deposit_slots)
                 suplies_left = self.withdraw_items(self.withdraw_paths[0])
+                if not suplies_left:
+                    self.log_msg("Out of supplies, stopping.")
+                    self.stop()
+
                 self.close_bank()
 
             # Check if idle
             if self.api_m.get_is_player_idle():
                 self.make_compost()
-                if self.afk_train:
-                    time.sleep(self.random_sleep_length(2, 2.26))
+                if self.afk_train and self.is_runelite_focused():
                     self.switch_window()
-                    self.sleep(percentage)
-
-
+                self.sleep(percentage)
             # -- End bot actions --
             if self.take_breaks:
                 self.check_break(runtime, percentage, minutes_since_last_break, seconds)
@@ -89,9 +90,6 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
             if current_progress != round(self.last_progress, 2):
                 self.update_progress((time.time() - self.start_time) / self.end_time)
                 self.last_progress = round(self.progress, 2)
-            if not suplies_left:
-                self.log_msg("Out of supplies, stopping.")
-                self.stop()
 
         self.update_progress(1)
         self.log_msg("Finished.")
@@ -123,7 +121,6 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
         while len(self.api_m.get_inv_item_indices(ids.SUPERCOMPOST)) != 0:
             time.sleep(self.random_sleep_length(.65, 2.2))
             afk_time = int(time.time() - afk__start_time)
-            self.is_runelite_focused()
             self.breaks_skipped = afk_time // 15
 
         if self.breaks_skipped > 0:
