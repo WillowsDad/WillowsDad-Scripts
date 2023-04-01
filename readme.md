@@ -97,5 +97,6 @@ Some scripts do things that are "afk-able". This feature simulates that by start
 - Remove afk-feature from parent class since all future bots can't do this (like future combat bot).
 - Create variables for image file paths, and image locations on screen.
 - Add checks in the setup methods for each bot to check bank settings.
+- Fix timing issue with breaks in UltraCompost Maker
   
 
