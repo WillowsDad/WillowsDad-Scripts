@@ -309,8 +309,6 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         # move mouse to bank and click
         self.mouse.move_to(bank.random_point())
 
-        self.check_text(bank, ["Bank", "Deposit"])
-
         self.mouse.click()
 
         wait_time = time.time()
@@ -518,9 +516,8 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
 
         # move mouse each slot and click to deposit all
         for slot in slot_list:
-            self.check_text(self.win.inventory_slots[slot], "All")
+            self.mouse.move_to(self.win.inventory_slots[slot].random_point())
             self.mouse.click()
-            time.sleep(self.random_sleep_length())
 
         return
 

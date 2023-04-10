@@ -109,9 +109,9 @@ class OSRSWDWoodcutting(WillowsDadBot):
                 self.chop_trees(percentage)
 
             if self.is_woodcutting():
-                self.sleep(percentage)
-                if self.afk_train and self.is_focused:
+                if self.afk_train and self.is_runelite_focused():
                     self.switch_window()
+                self.sleep(percentage)
                 
 
 
@@ -169,8 +169,10 @@ class OSRSWDWoodcutting(WillowsDadBot):
                 None
             Returns:
                 None"""
-        self.open_bank()
-        self.close_bank()
+        return
+        # self.open_bank()
+        # time.sleep(self.random_sleep_length())
+        # self.close_bank()
 
 
     def pick_up_nests(self):
@@ -221,7 +223,6 @@ class OSRSWDWoodcutting(WillowsDadBot):
             self.idle_time = time.time()
             if tree := self.get_nearest_tag(clr.PINK):
                 self.mouse.move_to(tree.random_point())
-                self.check_text(tree, "Chop")
                 self.mouse.click()
                 time.sleep(self.random_sleep_length())
                 break
