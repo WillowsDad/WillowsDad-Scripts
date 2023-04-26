@@ -156,7 +156,9 @@ class OSRSWDMining(WillowsDadBot):
 
         # Setup Checks for pickaxes and tagged objects
         self.check_equipment()
-        self.face_north()
+
+        if not self.power_Mining:
+            self.face_north()
 
         if not self.get_nearest_tag(clr.YELLOW) and not self.get_nearest_tag(clr.PINK) and not self.power_Mining:
             self.log_msg("Did not see a bank(YELLOW) or a Mining spot (PINK) on screen, make sure they are tagged.")

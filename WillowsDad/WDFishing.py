@@ -190,7 +190,8 @@ class OSRSWDFishing(WillowsDadBot):
         self.idle_time = 0
         self.deposit_ids = [ids.RAW_ANCHOVIES, ids.RAW_SHRIMPS, ids.RAW_LOBSTER, ids.RAW_TUNA, ids.RAW_SWORDFISH]
 
-        self.face_north()
+        if not self.power_fishing:
+            self.face_north()
         
         # Setup Checks for axes and tagged objects
         self.check_equipment()
