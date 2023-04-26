@@ -151,14 +151,18 @@ class OSRSWDFishing(WillowsDadBot):
         time_start = time.time()
         while True:
             if time.time() - time_start > 45:
-                self.log_msg("We've been walking for 2 minutes, something is wrong...stopping.")
+                self.log_msg("We've been walking for 45 seconds, something is wrong...stopping.")
                 self.stop()
             if found := self.get_nearest_tag(color):
                 self.log_msg("Found next color.")
                 break
             else:   # Below we are randomly choosing between the first or last 2 tiles in the list of tiles
                 shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)   # get all cyan tiles
+                if shapes is []:
+                    self.log_msg("No cyan tiles found, stopping.")
+                    return
                 shapes_sorted = sorted(shapes, key=RuneLiteObject.distance_from_rect_left)   # sort by distance from top left
+
 
                 if len(shapes_sorted) == 1:
                     tile = shapes_sorted[0] if direction == 1 else shapes_sorted[-1]

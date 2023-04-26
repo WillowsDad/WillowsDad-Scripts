@@ -291,6 +291,9 @@ class OSRSWDMining(WillowsDadBot):
             if found := self.get_nearest_tag(color):
                 break
             shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)
+            if shapes is []:
+                self.log_msg("No cyan tiles found, stopping.")
+                return
             if len(shapes) > 1:
                 shapes_sorted = (
                     sorted(shapes, key=RuneLiteObject.distance_from_rect_left)
