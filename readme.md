@@ -39,7 +39,7 @@ from .WillowsDad.WDMining import OSRSWDMining
 ![](osbcmodification1.png) ![](osbcmodification2.png)
 - Now all the bots should show up next time you load OSBC!
 - All the needed PNGs are included in the folder already.
-- **IF YOU ARE USING MINER OR FISHING BANKING REPLACE THE GEMETRY UTILITY FILE**
+- **IF YOU ARE USING MINER OR FISHING BANKING REPLACE THE GEOMETRY UTILITY FILE**
   - replace "src\utilities\geometry.py" with geomtery file in this github.
 - A more robust get_inv_item_first_indice is in the provided morg_http_client.py, you can replace the whole file or just that method.
 
