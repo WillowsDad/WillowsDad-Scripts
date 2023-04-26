@@ -91,33 +91,42 @@ class OSRSWDWoodcutting(WillowsDadBot):
             deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
             self.roll_chance_passed = False
             self.spec_energy = self.get_special_energy()
+            try:
+                # check if inventory is full
+                if self.api_m.get_is_inv_full():
+                    self.bank_or_drop(deposit_slots)
 
-            # check if inventory is full
-            if self.api_m.get_is_inv_full():
-                self.bank_or_drop(deposit_slots)
+                # Check if idle
+                if self.api_m.get_is_player_idle():
 
-            # Check if idle
-            if self.api_m.get_is_player_idle():
+                    self.pick_up_nests()
 
-                self.pick_up_nests()
+                    if self.spec_energy >= 100 and self.dragon_special:
+                        self.activate_special()
+                        self.log_msg("Dragon Axe Special Activated")
 
-                if self.spec_energy >= 100 and self.dragon_special:
-                    self.activate_special()
-                    self.log_msg("Dragon Axe Special Activated")
+                    self.log_msg("Chopping trees...")
+                    self.chop_trees(percentage)
 
-                self.log_msg("Chopping trees...")
-                self.chop_trees(percentage)
-
-            if self.is_woodcutting():
-                if self.afk_train and self.is_runelite_focused():
-                    self.switch_window()
-                self.sleep(percentage)
-                
+                if self.is_woodcutting():
+                    if self.afk_train and self.is_runelite_focused():
+                        self.switch_window()
+                    self.sleep(percentage)
+                    
+            except Exception as e:
+                self.log_msg(f"Exception: {e}")
+                self.loop_count += 1
+                if self.loop_count > 5:
+                    self.log_msg("Too many exceptions, stopping.")
+                    self.log_msg(f"Last exception: {e}")
+                    self.stop()
+                continue
 
 
 
 
             # -- End bot actions --
+            self.loop_count = 0
             if self.take_breaks:
                 self.check_break(runtime, percentage, minutes_since_last_break, seconds)
             current_progress = round((time.time() - self.start_time) / self.end_time, 2)
@@ -228,6 +237,10 @@ class OSRSWDWoodcutting(WillowsDadBot):
                 break
             else:
                 self.log_msg("No tree found, waiting for a tree to spawn...")
+                if safety := self.get_nearest_tag(clr.CYAN):
+                    self.mouse.move_to(safety.random_point())
+                    self.mouse.click()
+                    time.sleep(self.random_sleep_length())
                 time.sleep(self.random_sleep_length() * 3)
                 if int(time.time() - self.idle_time) > 32:
                     self.adjust_camera(clr.PINK, 1)
@@ -249,7 +262,9 @@ class OSRSWDWoodcutting(WillowsDadBot):
                     time.sleep(self.random_sleep_length(.8, 1.2))
                     break
             self.open_bank()
-            self.deposit_items(deposit_slots)
+            time.sleep(self.random_sleep_length())
+            self.check_deposit_all()
+            self.deposit_items(deposit_slots, self.deposit_ids)
             time.sleep(self.random_sleep_length())
             self.close_bank()
         else:

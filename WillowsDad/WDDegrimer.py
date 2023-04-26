@@ -141,33 +141,46 @@ class OSRSWDDegrimer(WillowsDadBot):
             deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
             self.roll_chance_passed = False
 
-            if len(self.api_m.get_inv_item_indices(self.withdraw_ids)) == 0:
-                self.open_bank()
-                self.deposit_items(deposit_slots)
-                time.sleep(self.random_sleep_length())
-                supplies_left = self.withdraw_items(self.withdraw_paths)
-                time.sleep(self.random_sleep_length())
-                self.close_bank()
+            try:
+                if len(self.api_m.get_inv_item_indices(self.withdraw_ids)) == 0:
+                    while not self.is_bank_open():
+                        self.open_bank()
+                        time.sleep(self.random_sleep_length())
+                    self.check_deposit_all()
+                    self.deposit_items(deposit_slots, self.deposit_ids)
+                    time.sleep(self.random_sleep_length())
+                    self.supplies_left = self.withdraw_items(self.withdraw_paths)
+                    time.sleep(self.random_sleep_length())
+                    self.close_bank()
 
-            # Check if idle
-            if self.api_m.get_is_player_idle():
-                self.degrime_herb(self.afk_train, self.take_breaks)
-                if self.afk_train:
-                    self.switch_window()
-                    self.sleep(percentage)
-                if not self.is_focused:
-                    self.switch_window()
+                # Check if idle
+                else:
+                    self.degrime_herb(self.afk_train, self.take_breaks)
+                    if self.afk_train:
+                        self.switch_window()
+                        self.sleep(percentage)
+                    if not self.is_focused:
+                        self.switch_window()
 
+            except Exception as e:
+                self.log_msg(f"Exception: {e}")
+                self.loop_count += 1
+                if self.loop_count > 5:
+                    self.log_msg("Too many exceptions, stopping.")
+                    self.log_msg(f"Last exception: {e}")
+                    self.stop()
+                continue
 
             # -- End bot actions --
             # self.check_break(runtime, percentage, minutes_since_last_break, seconds, deposit_slots)
+            self.loop_count = 0
             if self.take_breaks:
                 self.check_break(runtime, percentage, minutes_since_last_break, seconds)
             current_progress = round((time.time() - self.start_time) / self.end_time, 2)
             if current_progress != round(self.last_progress, 2):
                 self.update_progress((time.time() - self.start_time) / self.end_time)
                 self.last_progress = round(self.progress, 2)
-            if not supplies_left:
+            if not self.supplies_left:
                 self.log_msg("Finished.")
                 self.stop()
 
@@ -185,6 +198,7 @@ class OSRSWDDegrimer(WillowsDadBot):
         self.idle_time = 0
         self.herb = 0
         self.withdraw_paths = [self.herb_img]
+        self.supplies_left = True
     
 
     def sleep(self, percentage):
@@ -193,20 +207,27 @@ class OSRSWDDegrimer(WillowsDadBot):
                 None
             Returns:
                 None"""
+        # initialize variables
         self.breaks_skipped = 0
         afk_time = 0
         afk__start_time = time.time() 
         
+        # loop until no more items in inventory match the withdraw_ids
         while len(self.api_m.get_inv_item_indices(self.withdraw_ids)) != 0:
+            # sleep for a random amount of time
             time.sleep(self.random_sleep_length(.65, 2.2))
             afk_time = int(time.time() - afk__start_time)
+            # check if the focus is on the Runelite window
             self.is_runelite_focused()
+            # calculate the number of breaks skipped
             self.breaks_skipped = afk_time // 15
 
+        # if any breaks were skipped, update the percentage chance and multiplier
         if self.breaks_skipped > 0:
             self.roll_chance_passed = True
             self.multiplier += self.breaks_skipped * .25
             self.log_msg(f"Skipped {self.breaks_skipped} break rolls while afk, percentage chance is now {round(percentage * 100)}%")
+
 
 
     def degrime_herb(self, afk=False, breaks=False):
@@ -220,7 +241,7 @@ class OSRSWDDegrimer(WillowsDadBot):
         # Define inventory slot indices in custom "S" motion, top to bottom and then bottom to top
         s_motion_indices = [0, 4, 8, 12, 16, 20, 24, 25, 21, 17, 13, 9, 5, 1, 2, 6, 10, 14, 18, 22, 26, 27, 23, 19, 15, 11, 7, 3]
 
-        # Get all items in inventory
+        # Get all items in inventory that match the withdraw_ids
         items = self.api_m.get_inv_item_indices(self.withdraw_ids)
 
         # Filter s_motion_indices to include only those indices that are in the items list
@@ -230,7 +251,10 @@ class OSRSWDDegrimer(WillowsDadBot):
         for index in s_motion_items:
             self.mouse.move_to(self.win.inventory_slots[index].random_point(), mouseSpeed="fastest", knotsCount=0)
             self.mouse.click()
+            # If the afk flag is set, return early to simulate an AFK state
             if afk:
                 return
+
+        # If the breaks flag is set, update the roll chance passed variable
         if breaks:
             self.roll_chance_passed = True
