@@ -230,15 +230,15 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             ):
                 return   # We found deposit all is already selected, return.
             # We now check several times within 1 second for deposit all grey, if we find it, click it and return.
-            if deposit_all_grey_button := imsearch.search_img_in_rect(
+            elif deposit_all_grey_button := imsearch.search_img_in_rect(
                 deposit_all_grey, self.win.game_view
             ):
                 self.mouse.move_to(deposit_all_grey_button.random_point())
                 self.mouse.click()
                 return
             if time.time() - time_searching > 1:
-                self.log_msg("Could not find deposit all button, quitting.")
-                self.stop()
+                self.log_msg("Could not verifty deposit all settings, double check those.")
+                return
             time.sleep(.2)
                 
         
