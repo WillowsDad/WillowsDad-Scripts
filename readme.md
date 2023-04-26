@@ -95,6 +95,7 @@ This is a Catherby Banking or Power-fisher
 - Supports: small-net, cage, harpoon.
 - Bank deposit settings should be set to "All"
 - Quits on time
+- Power fishing drops all but the first slot
 
 ### Miner
 This is a East Varrock Banking or Power-miner
