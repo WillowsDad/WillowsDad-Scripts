@@ -556,11 +556,6 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         self.mouse.click()
         time.sleep(self.random_sleep_length())
 
-        # If the bank is still open after clicking the exit button, log an error message and stop the bot
-        if self.is_bank_open():
-            self.log_msg("Closing bank failed, quitting bot...")
-            self.stop()
-
         return
 
 

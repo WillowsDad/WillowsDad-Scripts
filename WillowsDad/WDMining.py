@@ -160,8 +160,8 @@ class OSRSWDMining(WillowsDadBot):
         if not self.power_Mining:
             self.face_north()
 
-        if not self.get_nearest_tag(clr.YELLOW) and not self.get_nearest_tag(clr.PINK) and not self.power_Mining:
-            self.log_msg("Did not see a bank(YELLOW) or a Mining spot (PINK) on screen, make sure they are tagged.")
+        if not self.get_nearest_tag(clr.YELLOW) and not self.get_nearest_tag(clr.PINK) and not self.power_Mining and not self.get_nearest_tag(clr.CYAN):
+            self.log_msg("Did not see a bank(YELLOW) or a Mining spot (PINK) on screen, or a tile (CYAN) make sure they are tagged.")
             self.adjust_camera(clr.YELLOW)
             self.stop()
         if not self.get_nearest_tag(clr.CYAN) and not self.power_Mining:
@@ -291,6 +291,8 @@ class OSRSWDMining(WillowsDadBot):
                 self.log_msg("We've been walking for 2 minutes, something is wrong...stopping.")
                 self.stop()
             if found := self.get_nearest_tag(color):
+                if switch_direction is False and color == clr.YELLOW:
+                    self.log_msg("Found Yellow when not switched directions, report to developer.")
                 break
             shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)
             if shapes is []:
