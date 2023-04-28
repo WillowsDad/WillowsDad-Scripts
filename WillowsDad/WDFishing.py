@@ -1,4 +1,5 @@
 import time
+import traceback
 from model.osrs.WillowsDad.WillowsDad_bot import WillowsDadBot
 import utilities.api.item_ids as ids
 import utilities.api.animation_ids as animation
@@ -121,6 +122,9 @@ class OSRSWDFishing(WillowsDadBot):
                 if self.loop_count > 5:
                     self.log_msg("Too many exceptions, stopping.")
                     self.log_msg(f"Last exception: {e}")
+                    # print out stack trace
+                    stack_trace = traceback.format_exc()
+                    self.log_msg(stack_trace)
                     self.stop()
                 continue
      
