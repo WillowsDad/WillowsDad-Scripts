@@ -1,5 +1,9 @@
+import imghdr
 import time
 import traceback
+import cv2
+
+import numpy as np
 from model.osrs.WillowsDad.WillowsDad_bot import WillowsDadBot
 import utilities.api.item_ids as ids
 import utilities.api.animation_ids as animation
@@ -8,12 +12,13 @@ import utilities.random_util as rd
 import utilities.imagesearch as imsearch
 import pyautogui as pag
 from utilities.geometry import RuneLiteObject
+import pyautogui
 
 
 
-class OSRSWDFishing(WillowsDadBot):
+class GeometryTesting(WillowsDadBot):
     def __init__(self):
-        bot_title = "WillowsDad Fishing"
+        bot_title = "GeometryTesting"
         description = """Fishes at supported locations."""
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)
@@ -26,8 +31,6 @@ class OSRSWDFishing(WillowsDadBot):
         self.power_fishing = False
         self.fishing_tools = [ids.LOBSTER_POT]
         self.fishing_bait = []
-        self.dragon_special = False
-
 
 
     def create_options(self):
@@ -40,7 +43,6 @@ class OSRSWDFishing(WillowsDadBot):
         super().create_options()
         self.options_builder.add_dropdown_option("style", "What type of fishing?", ["Fly", "Bait", "Harpoon", "Net", "Cage"])
         self.options_builder.add_checkbox_option("power_fishing", "Power Fishing? Drops everything in inventory.", [" "])
-        self.options_builder.add_checkbox_option("dragon_special", "Use Dragon Harpoon Special?", [" "])
 
     def save_options(self, options: dict):
         """
@@ -68,8 +70,6 @@ class OSRSWDFishing(WillowsDadBot):
                 elif options[option] == "Cage":
                     self.style = "Cage"
                     self.fishing_tools = [ids.LOBSTER_POT]
-            elif option == "dragon_special":
-                self.dragon_special = options[option] != []
             elif option == "power_fishing":
                 self.power_fishing = options[option] != []
             else:
@@ -85,64 +85,95 @@ class OSRSWDFishing(WillowsDadBot):
         self.options_set = True
 
 
-    def main_loop(self):
+    def main_loop(self):  # sourcery skip: avoid-builtin-shadow, extract-duplicate-method
         """
         Main bot loop. We call setup() to set up the bot, then loop until the end time is reached.
         """
-        # Setup variables
-        self.setup()
+        self.start_time = time.time()
+        self.end_time = self.start_time + self.running_time * 60
         # Main loop
         while time.time() - self.start_time < self.end_time:
 
-            runtime = int(time.time() - self.start_time)
-            minutes_since_last_break = int((time.time() - self.last_break) / 60)
-            seconds = int(time.time() - self.last_break) % 60
-            percentage = (self.multiplier * .01)  # this is the percentage chance of a break
-            deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
-            self.roll_chance_passed = False
-            self.spec_energy = self.get_special_energy()
+            # # get nearest cyan tag and move mouse to the center of it
+            # self.log_msg("Unscaled center")
+            # object = self.get_nearest_tag(clr.CYAN)
+            # self.mouse.move_to(object.center())
+            # self.log_msg("Scaled center")
+            # time.sleep(1)
+            # object = object.scale_and_center(2, 2)
+            # self.mouse.move_to(object.center())
+            # time.sleep(1)
 
-            try:
-                # check if inventory is full
-                if self.api_m.get_is_inv_full():
-                    if not self.power_fishing:
-                        self.walk_to_color(clr.YELLOW, 1)
-                        self.bank_or_drop(deposit_slots)
-                        self.check_equipment()
-                        self.walk_to_color(clr.PINK, -1)
-                    else:
-                        self.bank_or_drop(deposit_slots)
+            # # get nearest cyan tag and move mouse to the top-left corner of it
+            # self.log_msg("Object edges unscaled")
+            # object2 = self.get_nearest_tag(clr.CYAN)
+            # self.mouse.move_to((object2._x_max, object2._y_max))
+            # time.sleep(1)
 
-                # Check if idle
-                if self.api_m.get_is_player_idle():
-                    self.log_msg("Fishing...")
-                    self.go_fish()
+            # # scale the object and move mouse to the top-left corner of the scaled object
+            # object3 = object2.scale_and_center(2, 2)
+            # self.log_msg("Object edges scaled")
+            # self.mouse.move_to((object3._x_max, object3._y_max))
+            # time.sleep(1)
 
-                if self.is_fishing():
-                    if self.afk_train and self.is_runelite_focused():
-                        self.switch_window()
-                    self.sleep(percentage)
-            except Exception as e:
-                self.log_msg(f"Exception: {e}")
-                self.loop_count += 1
-                if self.loop_count > 5:
-                    self.log_msg("Too many exceptions, stopping.")
-                    self.log_msg(f"Last exception: {e}")
-                    # print out stack trace
-                    stack_trace = traceback.format_exc()
-                    self.log_msg(stack_trace)
-                    self.stop()
-                continue
-     
-                
-            # -- End bot actions --
-            self.loop_count = 0
-            if self.take_breaks:
-                self.check_break(runtime, percentage, minutes_since_last_break, seconds)
-            current_progress = round((time.time() - self.start_time) / self.end_time, 2)
-            if current_progress != round(self.last_progress, 2):
-                self.update_progress((time.time() - self.start_time) / self.end_time)
-                self.last_progress = round(self.progress, 2)
+
+            # Install pyautogui if you haven't already
+            # pip install pyautogui
+
+            # Take a screenshot
+            # screenshot = pyautogui.screenshot()
+            # screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2BGR)
+
+            # # Create the first RuneLiteObject
+            # obj1 = self.get_nearest_tag(clr.CYAN)
+            # rect1 = self.win.game_view.screenshot
+
+            # # Create a copy of the original object
+            # obj2 = RuneLiteObject(obj1._x_min, obj1._x_max, obj1._y_min, obj1._y_max, obj1._width, obj1._height, obj1._center, obj1._axis)
+
+            # # Draw the first rectangle (blue) on the screenshot
+            # cv2.rectangle(screenshot, (obj1._x_min, obj1._y_min), (obj1._x_max, obj1._y_max), (255, 0, 0), 2)
+
+            # # Display the screenshot with the original object
+            # cv2.imshow("Original Object", screenshot)
+            # cv2.waitKey(0)
+
+            # # Scale the second object
+            # obj2.scale_and_center(2, 2)
+
+            # # Draw the second rectangle (green) on the screenshot
+            # cv2.rectangle(screenshot, (obj2._x_min, obj2._y_min), (obj2._x_max, obj2._y_max), (0, 255, 0), 2)
+
+            # # Display the screenshot with the scaled object
+            # cv2.imshow("Scaled Object", screenshot)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
+
+            # Assuming that you have already created an OutlinedObject object called obj:
+            bank = self.get_nearest_tag(clr.YELLOW)
+            self.mouse.move_to(bank.center())
+            self.mouse.click()
+            time.sleep(1)
+
+            obj = self.win.game_view
+            image = obj.screenshot()
+
+            # Display the image using OpenCV
+            cv2.imshow('Screenshot', image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+            obj = obj.scale(scale_height=.2, scale_width=.5, anchor_y=0)
+            image = obj.screenshot()
+
+            # Display the image using OpenCV
+            cv2.imshow('Screenshot', image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+
+
+        
 
         self.update_progress(1)
         self.log_msg("Finished.")
@@ -168,12 +199,13 @@ class OSRSWDFishing(WillowsDadBot):
                 break
             else:   # Below we are randomly choosing between the first or last 2 tiles in the list of tiles
                 shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)   # get all cyan tiles
-                if len(shapes) == 0:
-                    self.log_msg("No cyan tiles found")
-                    continue
-
+                if shapes is []:
+                    self.log_msg("No cyan tiles found, stopping.")
+                    return
                 shapes_sorted = sorted(shapes, key=RuneLiteObject.distance_from_rect_left)   # sort by distance from top left
-                if len(shapes_sorted) <= 2:
+
+
+                if len(shapes_sorted) == 1:
                     tile = shapes_sorted[0] if direction == 1 else shapes_sorted[-1]
                 if (len(shapes_sorted) > 2):
                     if direction == 1:
@@ -181,7 +213,7 @@ class OSRSWDFishing(WillowsDadBot):
                     else:
                         tile = shapes_sorted[-1] if rd.random_chance(.74) else shapes_sorted[-2]
 
-                self.mouse.move_to(tile.scale(2,2).random_point(), mouseSpeed = "fastest")
+                self.mouse.move_to(tile.random_point(), mouseSpeed = "fast")
                 self.mouse.click()
                 time.sleep(self.random_sleep_length()*2)
         return
@@ -253,9 +285,6 @@ class OSRSWDFishing(WillowsDadBot):
             self.log_msg("Runelite is not focused...")
         while True: 
             self.idle_time = time.time()
-            if self.spec_energy >= 100 and self.dragon_special:
-                self.activate_special()
-                self.log_msg("Dragon Harpoon Special Activated")
             if fishing_spot := self.get_nearest_tag(clr.PINK):
                 self.mouse.move_to(fishing_spot.random_point())
                 while not self.mouse.click(check_red_click=True):

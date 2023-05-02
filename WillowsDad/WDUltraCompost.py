@@ -70,20 +70,19 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
                 # Inventory finished, deposit and withdraw
                 if len(self.api_m.get_inv_item_indices(ids.SUPERCOMPOST)) == 0:
                     self.open_bank()
-                    time.sleep(self.random_sleep_length())
+                    time.sleep(self.random_sleep_length()/2)
                     self.check_deposit_all()
                     self.deposit_items(deposit_slots, self.deposit_ids)
-                    self.sleep(self.random_sleep_length())
+                    self.sleep(self.random_sleep_length()/2)
                     suplies_left = self.withdraw_items(self.withdraw_paths[0])
                     if not suplies_left:
                         self.log_msg("Out of supplies, stopping.")
                         self.stop()
                     self.close_bank()
-                elif not self.is_bank_open():
-                    self.make_compost()
-                    if self.afk_train and self.is_runelite_focused():
-                        self.switch_window()
-                    self.sleep(percentage)
+                self.make_compost()
+                if self.afk_train and self.is_runelite_focused():
+                    self.switch_window()
+                self.sleep(percentage)
 
             except Exception as e:
                 self.log_msg(f"Exception: {e}")

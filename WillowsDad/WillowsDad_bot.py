@@ -86,6 +86,8 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         self.spec_energy = self.get_special_energy()
         self.last_runtime = 0
         self.safety_squares = self.get_all_tagged_in_rect(self.win.game_view ,clr.CYAN)
+        self.deposit_all_red_button = None
+        self.exit_btn = None
 
 
 
@@ -116,7 +118,6 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             Returns:
                 None"""
         self.mouse.move_to(self.win.spec_orb.random_point())
-        time.sleep(self.random_sleep_length(.8, 1.2))
         self.mouse.click()
         time.sleep(self.random_sleep_length())
 
@@ -218,6 +219,9 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         """
         This will check if deposit all png is found, and select all if not.
         """
+        # if we've already searched and found, return
+        if not self.deposit_all_red_button:
+            return
         # get the path of deposit_all_grey.png and red
         deposit_all_grey = self.WILLOWSDAD_IMAGES.joinpath("deposit_all_grey.png")
         deposit_all_red = self.WILLOWSDAD_IMAGES.joinpath("deposit_all_red.png")
@@ -225,13 +229,14 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         # if we find deposit all red in game view, return, else, find grey and click
         time_searching = time.time()
         while True:
-            if deposit_all_red_button := imsearch.search_img_in_rect(
-                deposit_all_red, self.win.game_view
-            ):
+            self.deposit_all_red_button = imsearch.search_img_in_rect(
+                deposit_all_red, self.win.game_view.scale(scale_height=.2, scale_width=.5, anchor_y=.8)
+            )
+            if self.deposit_all_red_button:
                 return   # We found deposit all is already selected, return.
             # We now check several times within 1 second for deposit all grey, if we find it, click it and return.
             elif deposit_all_grey_button := imsearch.search_img_in_rect(
-                deposit_all_grey, self.win.game_view
+                deposit_all_grey, self.win.game_view.scale(scale_height=.2, scale_width=.5, anchor_y=.8)
             ):
                 self.mouse.move_to(deposit_all_grey_button.random_point())
                 self.mouse.click()
@@ -463,7 +468,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             time_looking_for_item = time.time() + 5
             while time.time() < time_looking_for_item and not item_found:
                 # Try several times to find the item
-                item_found = imsearch.search_img_in_rect(item_img, self.win.game_view)
+                item_found = imsearch.search_img_in_rect(item_img, self.win.game_view.scale(scale_width=.5))
                 if item_found:
                     break
             if not item_found:
@@ -508,13 +513,11 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         if slot_list == 0:
             # If there's only one item, it is the first slot
             slot_list = [0]
-        # Loop until there are no more items in the inventory that match the deposit_ids
-        while self.api_m.get_inv_item_first_indice(deposit_ids) != -1:
-            # Move the mouse to each slot in the inventory and click to deposit all matching items
-            for slot in slot_list:
-                self.mouse.move_to(self.win.inventory_slots[slot].random_point(), mouseSpeed = "fast")
-                self.mouse.click()
-                time.sleep(self.random_sleep_length())
+        # Move the mouse to each slot in the inventory and click to deposit all matching items
+        for slot in slot_list:
+            self.mouse.move_to(self.win.inventory_slots[slot].random_point(), mouseSpeed = "fast")
+            self.mouse.click()
+            time.sleep(self.random_sleep_length())
 
         self.log_msg("Finished depositing items")
         return
@@ -534,12 +537,13 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
     def close_bank(self):
         """Exits the bank by clicking on the exit button, or pressing the esc key if the button is not found"""
         # Search for the exit button in the bank interface
-        exit_btn = imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("bank_exit.png"), self.win.game_view)
+        if not self.exit_btn:
+            self.exit_btn = imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("bank_exit.png"), self.win.game_view.scale(scale_height=.2, scale_width=.5, anchor_y=0))
 
         # If the exit button is not found, press the esc key and check if the bank is closed
         time_searching = time.time()
-        while not exit_btn:
-            exit_btn = imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("bank_exit.png"), self.win.game_view, confidence=.1)
+        while not self.exit_btn:
+            self.exit_btn = imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("bank_exit.png"), self.win.game_view.scale(scale_height=.2, scale_width=.5, anchor_y=1), confidence=.1)
             if time.time() - time_searching > 2:
                 # If the exit button is still not found after 2 second, log an error message and stop the bot
                 self.log_msg("Could not find bank exit button, pressing esc.")
@@ -552,7 +556,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             time.sleep(.2)
 
         # Click on the exit button to close the bank
-        self.mouse.move_to(exit_btn.random_point())
+        self.mouse.move_to(self.exit_btn.random_point())
         self.mouse.click()
         time.sleep(self.random_sleep_length())
 
@@ -575,7 +579,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         # Loop until the time limit is reached
         while (time.time() < end_time):
             # Check if the image is found in the game view
-            if deposit_btn := imsearch.search_img_in_rect(deposit_all_img, self.win.game_view):
+            if deposit_btn := imsearch.search_img_in_rect(deposit_all_img, self.win.game_view.scale(scale_height=.2, scale_width=.5, anchor_y=.8)):
                 return True
 
             # Sleep for a short time to avoid excessive CPU usage

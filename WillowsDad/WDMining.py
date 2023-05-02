@@ -28,6 +28,7 @@ class OSRSWDMining(WillowsDadBot):
         self.ores = ids.ores
         self.power_Mining = False
         self.Mining_tools = ids.pickaxes
+        self.dragon_special = False
 
 
     def create_options(self):
@@ -39,6 +40,7 @@ class OSRSWDMining(WillowsDadBot):
         """
         super().create_options()
         self.options_builder.add_checkbox_option("power_Mining", "Power Mining? Drops everything in inventory.", [" "])
+        self.options_builder.add_checkbox_option("dragon_special", "Use Dragon Pickaxe Special?", [" "])
 
     def save_options(self, options: dict):
         """
@@ -50,6 +52,8 @@ class OSRSWDMining(WillowsDadBot):
         for option in options:
             if option == "power_Mining":
                 self.power_Mining = options[option] != []
+            elif option == "dragon_special":
+                self.dragon_special = options[option] != []
             else:
                 self.log_msg(f"Unexpected option: {option}")
 
@@ -151,7 +155,7 @@ class OSRSWDMining(WillowsDadBot):
         super().setup()
         self.idle_time = 0
         self.deposit_ids = self.ores
-        self.deposit_ids.extend([ids.UNCUT_DIAMOND, ids.UNCUT_DRAGONSTONE, ids.UNCUT_EMERALD, ids.UNCUT_RUBY, ids.UNCUT_SAPPHIRE])
+        self.deposit_ids.extend([ids.UNCUT_DIAMOND, ids.UNCUT_DRAGONSTONE, ids.UNCUT_EMERALD, ids.UNCUT_RUBY, ids.UNCUT_SAPPHIRE, ids.UNIDENTIFIED_MINERALS])
 
 
         # Setup Checks for pickaxes and tagged objects
@@ -219,6 +223,9 @@ class OSRSWDMining(WillowsDadBot):
         if not self.is_focused:
             self.log_msg("Runelite is not focused...")
         while not self.api_m.get_is_inv_full(): 
+            if self.get_special_energy() >= 100 and self.dragon_special:
+                self.activate_special()
+                self.log_msg("Dragon Pickaxe Special Activated")
             self.idle_time = time.time()
             afk_time = int(time.time() - afk__start_time)
             if Mining_spot := self.get_nearest_tag(clr.PINK):
@@ -226,7 +233,7 @@ class OSRSWDMining(WillowsDadBot):
                 while not self.mouse.click(check_red_click=True):
                     if Mining_spot := self.get_nearest_tag(clr.PINK):
                         self.mouse.move_to(Mining_spot.random_point())
-                self.api_m.wait_til_gained_xp("Mining", timeout=4)
+                self.api_m.wait_til_gained_xp("Mining", timeout=int(self.random_sleep_length() * 20))
 
             else:
                 if int(time.time() - self.idle_time) > 10:
@@ -255,12 +262,11 @@ class OSRSWDMining(WillowsDadBot):
         Args: None"""
         if not self.power_Mining:
             self.open_bank()
-            time.sleep(self.random_sleep_length())
+            time.sleep(self.random_sleep_length()/2)
             self.check_deposit_all()
             self.deposit_items(deposit_slots, self.deposit_ids)
-            time.sleep(self.random_sleep_length())
+            time.sleep(self.random_sleep_length()/2)
             self.close_bank()
-            time.sleep(self.random_sleep_length())
         else:
             self.drop_all(skip_slots=self.api_m.get_inv_slots_with_items(self.Mining_tools))
 
@@ -274,30 +280,44 @@ class OSRSWDMining(WillowsDadBot):
             self.log_msg("No Mining tool or in inventory, please fix that...")
             self.stop()
 
-    def walk_to_color(self, color: clr, direction: int):
+    def walk_to_color(self, color: clr, direction: int, timeout: int = 120):
         """
-        Walks to the bank.
+        Walks towards or away from a specific color tile in game.
         Returns: void
-        Args: None"""
-        # find and click furthest CYAN tile till "color" tile is found
+        Args: 
+            color: color of the tile to walk to
+            direction: direction to walk to (towards 1, away -1)
+            timeout: time to wait before stopping"""
+        # Flag to determine whether to switch direction for smoother walking
         switch_direction = False
         time_start = time.time()
+
         while True:
-            # When walking to bank lets check if we need to switch directions so it's a smoother walk by checking the minimap
+            # Check if the player needs to switch direction for a smoother walk when walking to the bank
             if color == clr.YELLOW:
                 if change_direction_img := imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("varrock_east_minimap.png"), self.win.minimap):
                     switch_direction = True
-            if time.time() - time_start > 120:
-                self.log_msg("We've been walking for 2 minutes, something is wrong...stopping.")
+
+            # Stop walking if timeout is exceeded
+            if time.time() - time_start > timeout:
+                self.log_msg(f"We've been walking for {timeout} seconds, something is wrong...stopping.")
                 self.stop()
+
+            # Stop walking if the target color tile is found
             if found := self.get_nearest_tag(color):
                 if switch_direction is False and color == clr.YELLOW:
-                    self.log_msg("Found Yellow when not switched directions, report to developer.")
+                    timeout = timeout / 2
                 break
+
+            # Get all cyan tiles in the game view
             shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)
+            
+            # Stop if no cyan tiles are found
             if shapes is []:
                 self.log_msg("No cyan tiles found, stopping.")
                 return
+
+            # Sort the cyan tiles based on their distance from the left or top-left of the game view
             if len(shapes) > 1:
                 shapes_sorted = (
                     sorted(shapes, key=RuneLiteObject.distance_from_rect_left)
@@ -307,7 +327,10 @@ class OSRSWDMining(WillowsDadBot):
                 self.mouse.move_to(shapes_sorted[direction].random_point(), mouseSpeed = "fastest")
             else:
                 self.mouse.move_to(shapes[0].random_point(), mouseSpeed = "fastest")
+
+            # Click on the selected tile and wait for a random duration between 0.35 and 0.67 seconds
             self.mouse.click()
             time.sleep(self.random_sleep_length(.35, .67))
+
         return
         
