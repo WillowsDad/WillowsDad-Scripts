@@ -121,7 +121,7 @@ This is a Catherby Banking or Power-fisher
 - Quits on time
 
 ### Miner
-This is a East Varrock Banking or Power-miner
+This is a East Varrock Banking or Power-miner (Also works with the bank in Mining Guild)
 #### Features and Setup
 - **Banking** requires you to set cyan tile path, or import a working path through the launcher for this script (recommended).
 - Tag Bank Yellow
