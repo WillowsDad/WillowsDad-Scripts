@@ -41,6 +41,46 @@ class Rectangle:
         self.width = width
         self.height = height
 
+    def scale(self, scale_width: float = 1, scale_height: float = 1, anchor_x: float = 0.5, anchor_y: float = 0.5):
+        """
+        Scales the rectangle by the given factors for width and height, and adjusts its position based on the anchor point.
+        Args:
+            scale_width: The scaling factor for the width of the rectangle (default 1).
+            scale_height: The scaling factor for the height of the rectangle (default 1).
+            anchor_x: The horizontal anchor point for scaling (default 0.5, which corresponds to the center).
+            anchor_y: The vertical anchor point for scaling (default 0.5, which corresponds to the center).
+        Returns:
+            The Rectangle object, after scaling.
+        Examples:
+            rect = Rectangle(left=10, top=10, width=100, height=100)
+
+            # Scale the rectangle by a factor of 2, using the center as the anchor point (default behavior).
+            rect.scale(2, 2)
+            
+            # Scale the rectangle by a factor of 2, using the top-left corner as the anchor point.
+            rect.scale(2, 2, anchor_x=0, anchor_y=0)
+            
+            # Scale the rectangle by a factor of 2, using the bottom-right corner as the anchor point.
+            rect.scale(2, 2, anchor_x=1, anchor_y=1)
+            
+            # Scale the rectangle width by a factor of 1.5 and height by a factor of 2, using the top-right corner as the anchor point.
+            rect.scale(scale_width=1.5, scale_height=2, anchor_x=1, anchor_y=0)
+        """
+        old_width = self.width
+        old_height = self.height
+
+        new_width = int(self.width * scale_width)
+        new_height = int(self.height * scale_height)
+
+        x_offset = int(old_width * (1 - scale_width) * anchor_x)
+        y_offset = int(old_height * (1 - scale_height) * anchor_y)
+
+        new_left = self.left + x_offset
+        new_top = self.top + y_offset
+
+        return Rectangle(new_left, new_top, new_width, new_height)
+
+
     def set_rectangle_reference(self, rect):
         """
         Sets the rectangle reference of the object.
@@ -140,6 +180,14 @@ class Rectangle:
         """
         return Point(self.left, self.top + self.height // 2)
 
+    def get_center_left(self) -> Point:
+        """
+        Gets the center left point of the rectangle.
+        Returns:
+            A Point representing the center left of the rectangle.
+        """
+        return Point(self.left, self.top + self.height // 2)
+
     def get_top_right(self) -> Point:
         """
         Gets the top right point of the rectangle.
@@ -202,6 +250,77 @@ class RuneLiteObject:
         self._center = center
         self._axis = axis
 
+    def scale(self, scale_width: float = 1, scale_height: float = 1, anchor_x: float = 0.5, anchor_y: float = 0.5):
+        """
+        Scales the RuneLiteObject by the given factors for width and height, and adjusts its position based on the anchor point.
+        Args:
+            scale_width: The scaling factor for the width of the RuneLiteObject (default 1).
+            scale_height: The scaling factor for the height of the RuneLiteObject (default 1).
+            anchor_x: The horizontal anchor point for scaling (default 0.5, which corresponds to the center).
+            anchor_y: The vertical anchor point for scaling (default 0.5, which corresponds to the center).
+        Returns:
+            The RuneLiteObject, after scaling.
+        Examples:
+            obj = RuneLiteObject(x_min=10, x_max=110, y_min=10, y_max=110, width=100, height=100, center=(60, 60), axis=None)
+
+            # Scale the object by a factor of 2, using the center as the anchor point (default behavior).
+            obj.scale(2, 2)
+
+            # Scale the object by a factor of 2, using the top-left corner as the anchor point.
+            obj.scale(2, 2, anchor_x=0, anchor_y=0)
+
+            # Scale the object by a factor of 2, using the bottom-right corner as the anchor point.
+            obj.scale(2, 2, anchor_x=1, anchor_y=1)
+
+            # Scale the object width by a factor of 1.5 and height by a factor of 2, using the top-right corner as the anchor point.
+            obj.scale(scale_width=1.5, scale_height=2, anchor_x=1, anchor_y=0)
+        """
+        newObject = self
+        old_width = self._width
+        old_height = self._height
+
+        new_width = int(self._width * scale_width)
+        new_height = int(self._height * scale_height)
+
+        x_offset = int(old_width * (1 - scale_width) * anchor_x)
+        y_offset = int(old_height * (1 - scale_height) * anchor_y)
+
+        new_x_min = self._x_min + x_offset
+        new_x_max = new_x_min + new_width
+        new_y_min = self._y_min + y_offset
+        new_y_max = new_y_min + new_height
+
+        new_center = (round((new_x_min + new_x_max) / 2), round((new_y_min + new_y_max) / 2))
+
+        scaled_axis = np.empty((0, 2), dtype=self._axis.dtype)
+        for point in self._axis:
+            # Calculate the scaled coordinates
+            scaled_x = int(new_x_min + (point[0] - self._x_min) * scale_width)
+            scaled_y = int(new_y_min + (point[1] - self._y_min) * scale_height)
+
+            # Calculate the intermediate points between the original and scaled coordinates
+            num_points = max(abs(scaled_x - point[0]), abs(scaled_y - point[1]))
+            if num_points > 0:
+                x_coords = np.linspace(point[0], scaled_x, num=num_points+1, dtype=int)
+                y_coords = np.linspace(point[1], scaled_y, num=num_points+1, dtype=int)
+                intermediate_points = np.column_stack((x_coords[1:], y_coords[1:]))
+                scaled_axis = np.concatenate((scaled_axis, intermediate_points), axis=0)
+
+        # Add the scaled point to the scaled axis
+        scaled_point = np.array([[scaled_x, scaled_y]], dtype=self._axis.dtype)
+        scaled_axis = np.concatenate((scaled_axis, scaled_point))
+
+        newObject._x_min = new_x_min
+        newObject._x_max = new_x_max
+        newObject._y_min = new_y_min
+        newObject._y_max = new_y_max
+        newObject._width = new_width
+        newObject._height = new_height
+        newObject._center = new_center
+        newObject._axis = scaled_axis
+
+        return newObject
+
     def set_rectangle_reference(self, rect: Rectangle):
         """
         Sets the rectangle reference of the object.
@@ -249,7 +368,7 @@ class RuneLiteObject:
     
     def distance_from_top_left(self) -> float:
         """
-        Gets the distance between the object and it's Rectangle parent left edge.
+        Gets the distance between the object and it's Rectangle parent top left corner.
         Useful for sorting lists of RuneLiteObjects.
         Returns:
             The distance from the point to the center of the object.
@@ -258,6 +377,19 @@ class RuneLiteObject:
         """
         center: Point = self.center()
         rect_left: Point = self.rect.get_top_left()
+        return math.dist([center.x, center.y], [rect_left.x, rect_left.y])
+    
+    def distance_from_top_right(self) -> float:
+        """
+        Gets the distance between the object and it's Rectangle parent top right corner.
+        Useful for sorting lists of RuneLiteObjects.
+        Returns:
+            The distance from the point to the center of the object.
+        Note:
+            Only use this if you're sorting a list of RuneLiteObjects that are contained in the same Rectangle.
+        """
+        center: Point = self.center()
+        rect_left: Point = self.rect.get_top_right()
         return math.dist([center.x, center.y], [rect_left.x, rect_left.y])
 
     def random_point(self, custom_seeds: List[List[int]] = None) -> Point:
