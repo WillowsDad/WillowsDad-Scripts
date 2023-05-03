@@ -35,13 +35,37 @@ from .WillowsDad.WDFishing import OSRSWDFishing
 from .WillowsDad.WillowsDad_bot import WillowsDadBot
 from .WillowsDad.WDMining import OSRSWDMining
 ```
+- Add this method in `OSRS-Bot-COLOR\src\utilities\api\morg_http_client.py`
+  ```python
+    def get_inv_item_first_indice(self, item_id: Union[List[int], int]) -> Union[int, List[int]]:
+        """
+        For the given item ID(s), returns the first inventory slot index that the item exists in.
+        e.g. [1, 1, 2, 3, 3, 3, 4, 4, 4, 4] -> [0, 2, 3, 6]
+        Args:
+            item_id: The item ID to search for (an single ID, or list of IDs).
+        Returns:
+            The first inventory slot index that the item exists in for each unique item ID.
+            If a single item ID is provided, returns an integer.
+            If no matching item ID is found, returns -1.
+        """
+        data = self.__do_get(endpoint=self.inv_endpoint)
+        if isinstance(item_id, int):
+            return next((i for i, inventory_slot in enumerate(data) if inventory_slot["id"] == item_id), -1)
+
+        elif isinstance(item_id, list):
+            first_occurrences = {}
+
+            for i, inventory_slot in enumerate(data):
+                item_id_in_slot = inventory_slot["id"]
+                if item_id_in_slot not in first_occurrences and item_id_in_slot in item_id:
+                    first_occurrences[item_id_in_slot] = i
+
+            return list(first_occurrences.values())
+  ```
 - Make the follow ***2*** changes to `\OSRS-Bot-COLOR\src\OSBC.py`
 ![](osbcmodification1.png) ![](osbcmodification2.png)
 - Now all the bots should show up next time you load OSBC!
 - All the needed PNGs are included in the folder already.
-- **IF YOU ARE USING MINER OR FISHING BANKING REPLACE THE GEOMETRY UTILITY FILE**
-  - replace "src\utilities\geometry.py" with geomtery file in this github.
-- A more robust get_inv_item_first_indice is in the provided morg_http_client.py, you can replace the whole file or just that method.
 
 
 ### Runelite Properites Profile
@@ -95,7 +119,6 @@ This is a Catherby Banking or Power-fisher
 - Supports: small-net, cage, harpoon.
 - Bank deposit settings should be set to "All"
 - Quits on time
-- Power fishing drops all but the first slot
 
 ### Miner
 This is a East Varrock Banking or Power-miner
