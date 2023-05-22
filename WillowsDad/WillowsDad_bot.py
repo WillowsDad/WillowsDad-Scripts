@@ -1,7 +1,8 @@
+import datetime
 import time
 from model.osrs.osrs_bot import OSRSBot
 import utilities.color as clr
-from utilities.geometry import RuneLiteObject
+from utilities.geometry import Rectangle, RuneLiteObject, Point
 import utilities.random_util as rd
 from utilities.api.morg_http_client import MorgHTTPSocket
 from utilities.api.status_socket import StatusSocket
@@ -314,6 +315,98 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
                 self.take_break(15, 120)
             else:
                 self.take_break()
+
+
+    def switch_account(self):
+        """
+        Logs out and signs back in with a new account.
+        Returns: void
+        Args: None
+        """
+        new_user = self.user2 if self.current_user == self.user1 else self.user1
+        self.logout()
+
+        # if its after 10pm, sleep for 5-7 hours
+        if datetime.datetime.now().hour >= 23:
+            self.log_msg("Sleeping for 5-7 hours...")
+            time.sleep(random.uniform(18000, 25200))
+
+        # 20% chance to sleep for 20seconds to 10 minutes
+        if rd.random_chance(.187):
+            self.log_msg("Sleeping for a while...")
+            time.sleep(random.uniform(20, 600))
+
+        else: 
+            time.sleep(self.random_sleep_length() * 3)
+
+        if existing_user := imsearch.search_img_in_rect(
+            self.WILLOWSDAD_IMAGES.joinpath("existing_user.png"),
+            self.win.game_view,
+        ):
+            self.mouse.move_to(existing_user.random_point())
+            self.mouse.click()
+            time.sleep(self.random_sleep_length() / 2)
+
+        # press tab to go to username field
+        pag.press('tab')
+
+        # hold backspace to delete current username
+        for _ in range(len(self.current_user[0])):  # adjust the range as needed
+            pag.press('backspace')
+            time.sleep(self.random_sleep_length() / 3)
+
+        # type in new username
+        pag.write(new_user[0], interval=self.random_sleep_length() / 3)
+
+        # press tab to go to password field
+        pag.press('tab')
+
+        # type in new password
+        pag.write(new_user[1], interval=self.random_sleep_length() / 3)
+
+        # press enter to login
+        pag.press('enter')
+
+        # wait for login
+        time.sleep(self.random_sleep_length(8,12))
+        if click_to_play := imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("click_to_play.png"), self.win.game_view):
+            self.mouse.move_to(click_to_play.random_point())
+            self.mouse.click()
+        else:
+            self.log_msg("Could not find click to play button, double check login.")
+            self.stop()
+        self.current_user = new_user
+        time.sleep(self.random_sleep_length(1.5,2.5))
+        return
+
+
+    def is_inv_empty(self):
+        """
+        Checks if inventory is empty.
+        Returns: bool
+        """
+        for i in range(len(self.win.inventory_slots)):
+            slot_location = self.win.inventory_slots[i].scale(.5,.5)
+            slot_img = imsearch.BOT_IMAGES.joinpath(self.WILLOWSDAD_IMAGES, "emptyslot.png")
+            if slot := imsearch.search_img_in_rect(slot_img, slot_location):
+                continue
+            self.log_msg(f"Found item at slot {i + 1}, or imsearch failed.")
+            return False
+        return True
+    
+    
+    def is_inv_full(self):
+        """
+        Checks if inventory is full.
+        Returns: bool
+        """
+        for i in range(len(self.win.inventory_slots)):
+            slot_location = self.win.inventory_slots[i].scale(.5,.5)
+            slot_img = imsearch.BOT_IMAGES.joinpath(self.WILLOWSDAD_IMAGES, "emptyslot.png")
+            if slot := imsearch.search_img_in_rect(slot_img, slot_location):
+                self.log_msg(f"Empty slot {i + 1}")
+                return False
+        return True
 
 
     def open_bank(self):

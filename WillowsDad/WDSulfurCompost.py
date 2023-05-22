@@ -13,9 +13,9 @@ import utilities.imagesearch as imsearch
 import random
 
 
-class OSRSWDUltraCompostMaker(WillowsDadBot):
+class OSRSSulfurCompost(WillowsDadBot):
     def __init__(self):
-        bot_title = "WillowsDad Ultra Compost Maker"
+        bot_title = "Sulfur Compost Maker"
         description = "Place this near a bank with ingredients and it will make ultra compost for you. Note: AFK doesn't always switch screens."
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)
@@ -66,42 +66,32 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
             deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
             self.roll_chance_passed = False
 
-            try:
-                # Inventory finished, deposit and withdraw
-                if len(self.api_m.get_inv_item_indices(ids.SUPERCOMPOST)) == 0:
-                    self.open_bank()
-                    time.sleep(self.random_sleep_length()/2)
-                    self.check_deposit_all()
-                    self.deposit_items(deposit_slots, self.deposit_ids)
-                    self.sleep(self.random_sleep_length()/2)
-                    suplies_left = self.withdraw_items(self.withdraw_paths[0])
-                    if not suplies_left:
-                        self.log_msg("Out of supplies, stopping.")
-                        self.stop()
-                    self.close_bank()
+            # Inventory finished, deposit and withdraw
+            if len(self.api_m.get_inv_item_indices(ids.COMPOST)) == 0:
+                self.open_bank()
+                self.deposit_items(deposit_slots, self.deposit_ids)
+                suplies_left = self.withdraw_items(self.withdraw_paths)
+                self.close_bank()
+
+            # Check if idle
+            if self.api_m.get_is_player_idle():
                 self.make_compost()
-                if self.afk_train and self.is_runelite_focused():
-                    time.sleep(self.random_sleep_length() * 2)
+                if self.afk_train:
+                    time.sleep(self.random_sleep_length(2, 2.26))
                     self.switch_window()
                 self.sleep(percentage)
 
-            except Exception as e:
-                self.log_msg(f"Exception: {e}")
-                self.loop_count += 1
-                if self.loop_count > 5:
-                    self.log_msg("Too many exceptions, stopping.")
-                    self.log_msg(f"Last exception: {e}")
-                    self.stop()
-                continue
 
             # -- End bot actions --
-            self.loop_count = 0
             if self.take_breaks:
                 self.check_break(runtime, percentage, minutes_since_last_break, seconds)
             current_progress = round((time.time() - self.start_time) / self.end_time, 2)
             if current_progress != round(self.last_progress, 2):
                 self.update_progress((time.time() - self.start_time) / self.end_time)
                 self.last_progress = round(self.progress, 2)
+            if not suplies_left:
+                self.log_msg("Out of supplies, stopping.")
+                self.stop()
 
         self.update_progress(1)
         self.log_msg("Finished.")
@@ -114,11 +104,10 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
             Returns:
                 None"""
         super().setup()
-        self.withdraw_ids = [ids.SUPERCOMPOST, ids.VOLCANIC_ASH]
-        self.withdraw_paths = [self.WILLOWSDAD_IMAGES.joinpath("Supercompost_bank.png"), self.WILLOWSDAD_IMAGES.joinpath("Volcanic_ash_bank.png")]
-        self.deposit_ids = [ids.ULTRACOMPOST]
-        self.supercompost = 0
-        self.text_box_ultracompost = self.WILLOWSDAD_IMAGES.joinpath("textboxultracompost.png")
+        self.withdraw_ids = [ids.COMPOST, ids.SALTPETRE]
+        self.withdraw_paths = [self.WILLOWSDAD_IMAGES.joinpath("Compost_bank.png"), self.WILLOWSDAD_IMAGES.joinpath("Saltpetre_bank.png")]
+        self.deposit_ids = [ids.SULPHUROUS_FERTILISER]
+        self.compost = 0
     
 
     def sleep(self, percentage):
@@ -131,9 +120,10 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
         afk_time = 0
         afk__start_time = time.time() 
 
-        while len(self.api_m.get_inv_item_indices(ids.SUPERCOMPOST)) != 0:
+        while len(self.api_m.get_inv_item_indices(ids.COMPOST)) != 0:
             time.sleep(self.random_sleep_length(.65, 2.2))
             afk_time = int(time.time() - afk__start_time)
+            self.is_runelite_focused()
             self.breaks_skipped = afk_time // 15
 
         if self.breaks_skipped > 0:
@@ -185,16 +175,5 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
         # move mouse to each item and click
         for item in unique_items:
             self.mouse.move_to(self.win.inventory_slots[item].random_point())
+            time.sleep(self.random_sleep_length() / 2)
             self.mouse.click()
-            time.sleep(self.random_sleep_length())
-
-        item_found = imsearch.search_img_in_rect(self.text_box_ultracompost, self.win.chat)
-        search_time = time.time()
-        while not item_found:
-            item_found = imsearch.search_img_in_rect(self.text_box_ultracompost, self.win.chat)
-            if time.time() - search_time > 2:
-                self.log_msg("Error finding ultracompost in chat box, stopping.")
-                self.stop()
-            time.sleep(.1)
-        time.sleep(self.random_sleep_length())
-        pag.press("space")

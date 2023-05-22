@@ -1,3 +1,4 @@
+import random
 import time
 from model.osrs.WillowsDad.WillowsDad_bot import WillowsDadBot
 import utilities.api.item_ids as ids
@@ -29,6 +30,7 @@ class OSRSWDMining(WillowsDadBot):
         self.power_Mining = False
         self.Mining_tools = ids.pickaxes
         self.dragon_special = False
+        self.location = "Mining Guild"
 
 
     def create_options(self):
@@ -41,6 +43,7 @@ class OSRSWDMining(WillowsDadBot):
         super().create_options()
         self.options_builder.add_checkbox_option("power_Mining", "Power Mining? Drops everything in inventory.", [" "])
         self.options_builder.add_checkbox_option("dragon_special", "Use Dragon Pickaxe Special?", [" "])
+        self.options_builder.add_checkbox_option("location", "Location?", ["Varrock East","Mining Guild"])
 
     def save_options(self, options: dict):
         """
@@ -54,6 +57,8 @@ class OSRSWDMining(WillowsDadBot):
                 self.power_Mining = options[option] != []
             elif option == "dragon_special":
                 self.dragon_special = options[option] != []
+            elif option == "location":
+                self.location = options[option]
             else:
                 self.log_msg(f"Unexpected option: {option}")
 
@@ -94,30 +99,33 @@ class OSRSWDMining(WillowsDadBot):
             minutes_since_last_break = int((time.time() - self.last_break) / 60)
             seconds = int(time.time() - self.last_break) % 60
             percentage = (self.multiplier * .01)  # this is the percentage chance of a break
-            deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
+            deposit_slots = self.api_m.get_first_occurrence(self.deposit_ids)
             self.roll_chance_passed = False
 
             try:
                 while not self.api_m.get_is_inv_full():
                     if self.api_m.get_run_energy() == 10000:
-                        self.mouse.move_to(self.win.run_orb.random_point())
-                        self.mouse.click()
-                        time.sleep(self.random_sleep_length())
+                        run = imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("run_enabled.png"), self.win.run_orb.scale(3,3))
+                        if run is None:
+                            self.mouse.move_to(self.win.run_orb.random_point())
+                            self.mouse.click()
+                            time.sleep(self.random_sleep_length())
                     if Mining_spot := self.get_nearest_tag(clr.PINK):
                         self.go_mining()
-                        deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
+                        deposit_slots = self.api_m.get_first_occurrence(self.deposit_ids)
                     else:
-                        self.walk_to_color(clr.PINK, -1)
+                        self.walk_to_mine()
 
 
                 if not self.power_Mining:
-                    self.walk_to_color(clr.YELLOW, 1)
+                    self.walk_to_bank()
                     self.bank_or_drop(deposit_slots)
                     self.check_equipment()
-                    self.walk_to_color(clr.PINK, -1)
+                    self.walk_to_mine()
+
                 else:
                     self.bank_or_drop(deposit_slots)
-                    
+
 
             except Exception as e:
                 self.log_msg(f"Exception: {e}")
@@ -127,8 +135,8 @@ class OSRSWDMining(WillowsDadBot):
                     self.log_msg(f"Last exception: {e}")
                     self.stop()
                 continue
-     
-                
+
+
             # -- End bot actions --
             self.loop_count = 0
             if self.take_breaks:
@@ -142,6 +150,22 @@ class OSRSWDMining(WillowsDadBot):
         self.log_msg("Finished.")
         self.logout()
         self.stop()
+
+
+    def walk_to_bank(self):
+        if self.location == "Varrock East":
+            self.walk_vertical(img=self.WILLOWSDAD_IMAGES.joinpath("varrock_east_minimap.png"), direction=1)
+            self.walk_horizontal(color=clr.YELLOW, direction=1)
+        elif self.location == "Mining Guild":
+            self.walk_horizontal(color=clr.YELLOW, direction=1)
+
+
+
+    def walk_to_mine(self):
+        if self.location == "Varrock East":
+            self.walk_diagonal(color=clr.PINK, direction=-1)
+        elif self.location == "Mining Guild":
+            self.walk_horizontal(color=clr.PINK, direction=-1)
     
     
     def setup(self):
@@ -268,7 +292,7 @@ class OSRSWDMining(WillowsDadBot):
             time.sleep(self.random_sleep_length()/2)
             self.close_bank()
         else:
-            self.drop_all(skip_slots=self.api_m.get_inv_slots_with_items(self.Mining_tools))
+            self.drop_all(skip_slots=self.api_m.get_inv_item_indices(self.Mining_tools))
 
     def check_equipment(self):
         """
@@ -280,57 +304,162 @@ class OSRSWDMining(WillowsDadBot):
             self.log_msg("No Mining tool or in inventory, please fix that...")
             self.stop()
 
-    def walk_to_color(self, color: clr, direction: int, timeout: int = 120):
+    def walk_vertical(self, direction: int, color: clr = None, timeout: int = 60, img: Path = None):
         """
-        Walks towards or away from a specific color tile in game.
+        Walks towards or away from a specific color tile in game or image.
         Returns: void
         Args: 
             color: color of the tile to walk to
             direction: direction to walk to (towards 1, away -1)
             timeout: time to wait before stopping"""
-        # Flag to determine whether to switch direction for smoother walking
-        switch_direction = False
-        time_start = time.time()
+        
+        if color is None and img is None:
+            self.log_msg("No stop condition. Add color or img path to stop walking.")
+            self.stop()
 
+        time_start = time.time()
         while True:
             # Check if the player needs to switch direction for a smoother walk when walking to the bank
-            if color == clr.YELLOW:
-                if change_direction_img := imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("varrock_east_minimap.png"), self.win.minimap):
-                    switch_direction = True
+            if img != None:
+                if change_direction_img := imsearch.search_img_in_rect(img, self.win.minimap):
+                    return
 
             # Stop walking if timeout is exceeded
             if time.time() - time_start > timeout:
                 self.log_msg(f"We've been walking for {timeout} seconds, something is wrong...stopping.")
                 self.stop()
 
-            # Stop walking if the target color tile is found
-            if found := self.get_nearest_tag(color):
-                if switch_direction is False and color == clr.YELLOW:
-                    timeout = timeout / 2
-                break
+            if color is not None:
+                # Stop walking if the target color tile is found
+                if found := self.get_nearest_tag(color):
+                    break
 
             # Get all cyan tiles in the game view
             shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)
+
+            # Stop if no cyan tiles are found
+            if shapes is []:
+                self.log_msg("No cyan tiles found, stopping.")
+                return
             
+            reverse = direction != 1
+
+            # Sort the cyan tiles based on their distance from the top-center
+            if len(shapes) > 1:
+                shapes_sorted = sorted(shapes, key=RuneLiteObject.distance_from_rect_top , reverse=reverse)
+                self.mouse.move_to(shapes_sorted[int(rd.fancy_normal_sample(0,1))].scale(3,3).random_point(), mouseSpeed = "fastest")
+            else:
+                self.mouse.move_to(shapes[0].scale(3,3).random_point(), mouseSpeed = "fastest")
+
+            # Click on the selected tile and wait for a random duration between 0.35 and 0.67 seconds
+            self.mouse.click()
+            time.sleep(self.random_sleep_length(.67, 1.24))
+
+        return
+    
+
+    def walk_horizontal(self, direction: int, color: clr = None, timeout: int = 60, img: Path = None):
+        """
+        Walks towards or away from a specific color tile in game or image.
+        Returns: void
+        Args: 
+            color: color of the tile to walk to
+            direction: direction to walk to (towards 1, away -1)
+            timeout: time to wait before stopping"""
+        
+        if color is None and img is None:
+            self.log_msg("No stop condition. Add color or img path to stop walking.")
+            self.stop()
+
+        time_start = time.time()
+        while True:
+            # Check if the player needs to switch direction for a smoother walk when walking to the bank
+            if img != None:
+                if change_direction_img := imsearch.search_img_in_rect(img, self.win.minimap):
+                    return
+
+            # Stop walking if timeout is exceeded
+            if time.time() - time_start > timeout:
+                self.log_msg(f"We've been walking for {timeout} seconds, something is wrong...stopping.")
+                self.stop()
+
+            if color is not None:
+                # Stop walking if the target color tile is found
+                if found := self.get_nearest_tag(color):
+                    break
+
+            # Get all cyan tiles in the game view
+            shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)
+
+            # Stop if no cyan tiles are found
+            if shapes is []:
+                self.log_msg("No cyan tiles found, stopping.")
+                return
+            
+            reverse = direction != 1
+
+            # Sort the cyan tiles based on their distance from the top-center
+            if len(shapes) > 1:
+                shapes_sorted = sorted(shapes, key=RuneLiteObject.distance_from_rect_left , reverse=reverse)
+                self.mouse.move_to(shapes_sorted[int(rd.fancy_normal_sample(0,1))].scale(3,3).random_point(), mouseSpeed = "fastest")
+            else:
+                self.mouse.move_to(shapes[0].scale(3,3).random_point(), mouseSpeed = "fastest")
+
+            # Click on the selected tile and wait for a random duration between 0.35 and 0.67 seconds
+            self.mouse.click()
+            time.sleep(self.random_sleep_length(.67, 1.24))
+
+        return
+    
+
+    def walk_diagonal(self, direction: int, color: clr = None, timeout: int = 60, img: Path = None):
+        """
+        Walks towards or away from a specific color tile in game or image.
+        Returns: void
+        Args: 
+            color: color of the tile to walk to
+            direction: direction to walk to (towards 1, away -1)
+            timeout: time to wait before stopping"""
+        
+        if color is None and img is None:
+            self.log_msg("No stop condition. Add color or img path to stop walking.")
+            self.stop()
+
+        time_start = time.time()
+        while True:
+            # Check if the player needs to switch direction for a smoother walk when walking to the bank
+            if img != None:
+                if change_direction_img := imsearch.search_img_in_rect(img, self.win.minimap):
+                    return
+
+            # Stop walking if timeout is exceeded
+            if time.time() - time_start > timeout:
+                self.log_msg(f"We've been walking for {timeout} seconds, something is wrong...stopping.")
+                self.stop()
+
+            if color is not None:
+                # Stop walking if the target color tile is found
+                if found := self.get_nearest_tag(color):
+                    break
+
+            # Get all cyan tiles in the game view
+            shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)
+
             # Stop if no cyan tiles are found
             if shapes is []:
                 self.log_msg("No cyan tiles found, stopping.")
                 return
 
-            # Sort the cyan tiles based on their distance from the left or top-left of the game view
+            # Sort the cyan tiles based on their distance from the top-center
             if len(shapes) > 1:
-                shapes_sorted = (
-                    sorted(shapes, key=RuneLiteObject.distance_from_rect_left)
-                    if switch_direction == True
-                    else sorted(shapes, key=RuneLiteObject.distance_from_top_left)
-                )
-                self.mouse.move_to(shapes_sorted[direction].random_point(), mouseSpeed = "fastest")
+                shapes_sorted = sorted(shapes, key=RuneLiteObject.distance_from_rect_top)
+                self.mouse.move_to(shapes_sorted[-1 if direction == -1 else random.randint(0,1)].scale(3,3).random_point(), mouseSpeed = "fastest")
             else:
-                self.mouse.move_to(shapes[0].random_point(), mouseSpeed = "fastest")
+                self.mouse.move_to(shapes_sorted[-1 if direction == -1 else 0].scale(3,3).random_point(), mouseSpeed = "fastest")
 
             # Click on the selected tile and wait for a random duration between 0.35 and 0.67 seconds
             self.mouse.click()
-            time.sleep(self.random_sleep_length(.35, .67))
+            time.sleep(self.random_sleep_length(.67, 1.24))
 
         return
         
