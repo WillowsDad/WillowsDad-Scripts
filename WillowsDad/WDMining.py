@@ -153,18 +153,18 @@ class OSRSWDMining(WillowsDadBot):
 
 
     def walk_to_bank(self):
-        if self.location == "Varrock East":
+        if self.location[0] == "Varrock East":
             self.walk_vertical(img=self.WILLOWSDAD_IMAGES.joinpath("varrock_east_minimap.png"), direction=1)
             self.walk_horizontal(color=clr.YELLOW, direction=1)
-        elif self.location == "Mining Guild":
+        elif self.location[0] == "Mining Guild":
             self.walk_horizontal(color=clr.YELLOW, direction=1)
 
 
 
     def walk_to_mine(self):
-        if self.location == "Varrock East":
+        if self.location[0] == 'Varrock East':
             self.walk_diagonal(color=clr.PINK, direction=-1)
-        elif self.location == "Mining Guild":
+        elif self.location[0] == "Mining Guild":
             self.walk_horizontal(color=clr.PINK, direction=-1)
     
     
@@ -304,58 +304,7 @@ class OSRSWDMining(WillowsDadBot):
             self.log_msg("No Mining tool or in inventory, please fix that...")
             self.stop()
 
-    def walk_vertical(self, direction: int, color: clr = None, timeout: int = 60, img: Path = None):
-        """
-        Walks towards or away from a specific color tile in game or image.
-        Returns: void
-        Args: 
-            color: color of the tile to walk to
-            direction: direction to walk to (towards 1, away -1)
-            timeout: time to wait before stopping"""
-        
-        if color is None and img is None:
-            self.log_msg("No stop condition. Add color or img path to stop walking.")
-            self.stop()
-
-        time_start = time.time()
-        while True:
-            # Check if the player needs to switch direction for a smoother walk when walking to the bank
-            if img != None:
-                if change_direction_img := imsearch.search_img_in_rect(img, self.win.minimap):
-                    return
-
-            # Stop walking if timeout is exceeded
-            if time.time() - time_start > timeout:
-                self.log_msg(f"We've been walking for {timeout} seconds, something is wrong...stopping.")
-                self.stop()
-
-            if color is not None:
-                # Stop walking if the target color tile is found
-                if found := self.get_nearest_tag(color):
-                    break
-
-            # Get all cyan tiles in the game view
-            shapes = self.get_all_tagged_in_rect(self.win.game_view, clr.CYAN)
-
-            # Stop if no cyan tiles are found
-            if shapes is []:
-                self.log_msg("No cyan tiles found, stopping.")
-                return
-            
-            reverse = direction != 1
-
-            # Sort the cyan tiles based on their distance from the top-center
-            if len(shapes) > 1:
-                shapes_sorted = sorted(shapes, key=RuneLiteObject.distance_from_rect_top , reverse=reverse)
-                self.mouse.move_to(shapes_sorted[int(rd.fancy_normal_sample(0,1))].scale(3,3).random_point(), mouseSpeed = "fastest")
-            else:
-                self.mouse.move_to(shapes[0].scale(3,3).random_point(), mouseSpeed = "fastest")
-
-            # Click on the selected tile and wait for a random duration between 0.35 and 0.67 seconds
-            self.mouse.click()
-            time.sleep(self.random_sleep_length(.67, 1.24))
-
-        return
+ 
     
 
     def walk_horizontal(self, direction: int, color: clr = None, timeout: int = 60, img: Path = None):
