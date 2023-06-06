@@ -15,7 +15,7 @@ import random
 
 class OSRSWDUltraCompostMaker(WillowsDadBot):
     def __init__(self):
-        bot_title = "WillowsDad Ultra Compost Maker"
+        bot_title = "WD Ultra Compost"
         description = "Place this near a bank with ingredients and it will make ultra compost for you. Note: AFK doesn't always switch screens."
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)
@@ -63,7 +63,7 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
             minutes_since_last_break = int((time.time() - self.last_break) / 60)
             seconds = int(time.time() - self.last_break) % 60
             percentage = (self.multiplier * .01)  # this is the percentage chance of a break
-            deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
+            deposit_slots = self.api_m.get_first_occurrence(self.deposit_ids)
             self.roll_chance_passed = False
 
             try:
@@ -180,7 +180,7 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
             None
         """
         # get unique items in inventory
-        unique_items = self.api_m.get_inv_item_first_indice(self.withdraw_ids)
+        unique_items = self.api_m.get_first_occurrence(self.withdraw_ids)
 
         # move mouse to each item and click
         for item in unique_items:
@@ -196,5 +196,5 @@ class OSRSWDUltraCompostMaker(WillowsDadBot):
                 self.log_msg("Error finding ultracompost in chat box, stopping.")
                 self.stop()
             time.sleep(.1)
-        time.sleep(self.random_sleep_length())
+        time.sleep(self.random_sleep_length() * 2)
         pag.press("space")

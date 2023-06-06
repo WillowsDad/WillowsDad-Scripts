@@ -12,7 +12,7 @@ import random
 
 class OSRSWDDegrimer(WillowsDadBot):
     def __init__(self):
-        bot_title = "WillowsDad Degrimer"
+        bot_title = "WD Degrimer"
         description = "Place this near a bank with ingredients and it will degrime your herbs."
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)

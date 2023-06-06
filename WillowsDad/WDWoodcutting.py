@@ -10,7 +10,7 @@ import pyautogui as pag
 
 class OSRSWDWoodcutting(WillowsDadBot):
     def __init__(self):
-        bot_title = "WillowsDad Woodcutting"
+        bot_title = "WD Woodcutting"
         description = """Chops wood and banks at supported locations."""
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)

@@ -17,7 +17,7 @@ class OSRSWDCombat(WillowsDadBot, launcher.Launchable):
     bones_to_bury = [item_ids.BONES, item_ids.BIG_BONES, item_ids.DRAGON_BONES]
 
     def __init__(self):
-        bot_title = "WillowsDad Combat"
+        bot_title = "WD Combat"
         description = (
             "This bot kills NPCs. Position your character near some NPCs and highlight them. After setting this bot's options, please launch RuneLite with the"
             " button on the right."

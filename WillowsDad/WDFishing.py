@@ -13,7 +13,7 @@ from utilities.geometry import RuneLiteObject
 
 class OSRSWDFishing(WillowsDadBot):
     def __init__(self):
-        bot_title = "WillowsDad Fishing"
+        bot_title = "WD Fishing"
         description = """Fishes at supported locations."""
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)
