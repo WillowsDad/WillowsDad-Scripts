@@ -121,10 +121,6 @@ Will log in and out to perform birdhouse runs.
 - Code only supports Hammerstone seeds, update that if you want different seeds
 - Make sure camera angle is pitched straight above the player or close to it.
 ![image](Camera_angle.png)
-```python
-from .WillowsDad.WDBirdhouse import OSRSWDBirdhouse
-
-
 ## Features
 
 ### Break System
