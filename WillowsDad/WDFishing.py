@@ -13,7 +13,7 @@ from utilities.geometry import RuneLiteObject
 
 class OSRSWDFishing(WillowsDadBot):
     def __init__(self):
-        bot_title = "WD Fishing"
+        bot_title = "WillowsDad Fishing"
         description = """Fishes at supported locations."""
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)
@@ -98,7 +98,7 @@ class OSRSWDFishing(WillowsDadBot):
             minutes_since_last_break = int((time.time() - self.last_break) / 60)
             seconds = int(time.time() - self.last_break) % 60
             percentage = (self.multiplier * .01)  # this is the percentage chance of a break
-            deposit_slots = self.api_m.get_first_occurrence(self.deposit_ids)
+            deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
             self.roll_chance_passed = False
             self.spec_energy = self.get_special_energy()
 

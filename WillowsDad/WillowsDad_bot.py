@@ -175,16 +175,6 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
 
         time.sleep(self.random_sleep_length())
 
-
-    def check_for_level_up(self, img: Path):
-        """Checks if the player has leveled up. By looking for image in chat
-            Args:
-                img: Path
-            Returns:
-                boolean"""
-        return bool(found := imsearch.search_img_in_rect(img, self.win.chat))
-
-
     def check_break(self, runtime, percentage, minutes_since_last_break, seconds):
         """
         This will roll the chance of a break.
@@ -400,6 +390,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             slot_img = imsearch.BOT_IMAGES.joinpath(self.WILLOWSDAD_IMAGES, "emptyslot.png")
             if slot := imsearch.search_img_in_rect(slot_img, slot_location):
                 continue
+            self.log_msg(f"Found item at slot {i + 1}, or imsearch failed.")
             return False
         return True
     
@@ -413,6 +404,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             slot_location = self.win.inventory_slots[i].scale(.5,.5)
             slot_img = imsearch.BOT_IMAGES.joinpath(self.WILLOWSDAD_IMAGES, "emptyslot.png")
             if slot := imsearch.search_img_in_rect(slot_img, slot_location):
+                self.log_msg(f"Empty slot {i + 1}")
                 return False
         return True
 
@@ -433,23 +425,21 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             self.mouse.move_to(bank.random_point())
 
         wait_time = time.time()
-        retried = False
         while not self.is_bank_open():
-            if time.time() - wait_time > 20 and not retried:
+            if time.time() - wait_time > 20:
                 self.mouse.move_to(bank.random_point())
                 while not self.mouse.click(check_red_click=True):
                     bank = self.choose_bank()
                     self.mouse.move_to(bank.random_point())
-                retried = True
             # if we waited for 17 seconds, break out of loop
-            if time.time() - wait_time > 60:
-                self.log_msg("We clicked on the bank but bank is not open after 60 seconds, bot is quiting...")
+            if time.time() - wait_time > 30:
+                self.log_msg("We clicked on the bank but bank is not open after 12 seconds, bot is quiting...")
                 self.stop()
             time.sleep(self.random_sleep_length())
         return
     
 
-    def check_text(self, object: RuneLiteObject, text, color : clr = None):
+    def check_text(self, object: RuneLiteObject, text):
         """
         calls mouseover text in a loop
         Returns: void
@@ -553,29 +543,8 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
             void"""
         for _ in range(amount):
             self.mouse.move_to(item.random_point())
-            if self.mouseover_text("Release", clr.OFF_WHITE):
-                return False
             self.mouse.click()
             time.sleep(self.random_sleep_length())
-            return True
-
-
-    def withdraw_items2(self, items: Union[RuneLiteObject, List[RuneLiteObject]], count=1) -> bool:
-        """
-        Given a list of runelite items, clicks on them from their saved locations.
-        Returns True if all items are found and clicked, False otherwise.
-        Args:
-            items: A RuneLiteObject or list of RuneLiteObjects representing the item images to search for in the bank.
-            count: An integer representing the amount of items to withdraw. Default is 1.
-        """
-        if not isinstance(items, list):
-            items = [items]
-        for item in items:
-            success = self.click_in_bank(item, count)
-            if not success:
-                self.log_msg(f"Could not find {item} in bank, mouseover check may have failed, or out of supplies")
-                self.stop()
-        return True
 
 
     def withdraw_items(self, items: Union[Path, List[Path]], count=1) -> bool:
@@ -620,7 +589,7 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
         return all_items_found
 
 
-    def deposit_items(self, slot_list, clicks=1):
+    def deposit_items(self, slot_list, deposit_ids):
         """
         Clicks once on each unique item to deposit all matching items in the inventory to the bank.
         Bank must be open already.
@@ -711,23 +680,3 @@ class WillowsDadBot(OSRSBot, launcher.Launchable, metaclass=ABCMeta):
 
         # If the image was not found within the time limit, return False
         return False
-    
-    def check_withdraw_x(self, amount):
-        if withdraw_grey := imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("deposit_x_grey.png"), self.win.game_view.scale(.5,.5, anchor_y=.75), confidence=.1):
-            self.mouse.move_to(withdraw_grey.scale(.5,.5).random_point())
-            self.sleep(self.random_sleep_length())
-            if self.mouseover_text(f"{amount}", color=clr.OFF_WHITE):
-                self.mouse.click()
-            else:
-                self.log_msg(f"Set withdraw amount to {amount}.")
-                self.stop()
-        elif withdraw_red := imsearch.search_img_in_rect(self.WILLOWSDAD_IMAGES.joinpath("deposit_x_red.png"), self.win.game_view.scale(.5,.5, anchor_y=.75)):
-            self.mouse.move_to(withdraw_red.scale(.3,.3).random_point())
-            self.sleep(self.random_sleep_length())
-            if self.mouseover_text(f"{amount}", color=clr.OFF_WHITE):
-                return
-            self.log_msg(f"Set withdraw amount to {amount}.")
-            self.stop()
-        else:
-            self.log_msg("Could not find withdraw x button using image search, please check code, report to developer.")
-            self.stop()

@@ -19,7 +19,7 @@ import utilities.ocr as ocr
 
 class OSRSWDDruidicRitual(WillowsDadBot):
     def __init__(self):
-        bot_title = "WD Druidic Ritual"
+        bot_title = "WillowsDad Druidic Ritual"
         description = """Completes the quest if items are in inv and you are at falador teleport."""
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)

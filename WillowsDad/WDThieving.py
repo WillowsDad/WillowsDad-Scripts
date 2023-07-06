@@ -11,7 +11,7 @@ from model.osrs.WillowsDad.WillowsDad_bot import WillowsDadBot
 
 class OSRSWDThieving(WillowsDadBot):
     def __init__(self):
-        bot_title = "WD Thieving"
+        bot_title = "WillowsDad Thieving"
         description = "This bot will left-click pickpocket(men) or steal from ardougne cake stall. Just meant to run for a couple minutes for requirements. No support. Coin pouches expected in 1st slot."
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)

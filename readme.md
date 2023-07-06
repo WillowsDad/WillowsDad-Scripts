@@ -6,7 +6,7 @@
 | [Setup](#setup)                 | [Break System](#break-system) | [AFK-Feature](#afk-feature) |
 | [Runelite Properites Profile](#runelite-properites-profile) | [All Bots](#bots) | [To-Do](#to-do) |
 | [WillowsDad Woodcutting](#willowsdad-woodcutting) | [Ultra-Compost](#ultra-compost) | [Degriming](#degriming) |
-| [WillowsDad Fishing](#fisher) | [WillowsDad Miner](#miner) |  |
+| [WillowsDad Fishing](#fisher) | [WillowsDad Miner](#miner) | [WillowsDad Birdhouse](#birdhouse) |
 |                                 |                           |                               |
 
 
@@ -36,7 +36,7 @@ from .WillowsDad.WillowsDad_bot import WillowsDadBot
 from .WillowsDad.WDMining import OSRSWDMining
 ```
 - Make the follow ***2*** changes to `\OSRS-Bot-COLOR\src\OSBC.py`
-![](osbcmodification1.png) ![](osbcmodification2.png)
+![](.\osbcmodification1.png) ![](.\osbcmodification2.png)
 - Now all the bots should show up next time you load OSBC!
 - All the needed PNGs are included in the folder already.
 
@@ -94,7 +94,7 @@ This is a Catherby Banking or Power-fisher
 - Quits on time
 
 ### Miner
-This is a East Varrock Banking or Power-miner (Also works with the bank in Mining Guild)
+This is a East Varrock Banking or Power-miner
 #### Features and Setup
 - **Banking** requires you to set cyan tile path, or import a working path through the launcher for this script (recommended).
 - Tag Bank Yellow
@@ -102,6 +102,28 @@ This is a East Varrock Banking or Power-miner (Also works with the bank in Minin
 - Bank deposit settings should be set to "All"
 - Afk mode isn't relevant for mining, does not do anything.
 - Quits on time
+
+### Birdhouse
+Will log in and out to perform birdhouse runs.
+
+#### Features and Setup
+- Automatically navigates to and interacts with all four birdhouse locations on Fossil Island.
+- Collects bird nests and banks them for later use.
+- Quits after certain number of runs, or an error happens.
+- Tags:
+  - Import the runelite profile settings `WDBirdhouse.properties` for all the tags. There are a lot, I recommend looking at them before changing the script
+  - Banks should always be tagged yellow for my scripts.
+
+#### Setup
+- Add the `WD_Birdhouse.py` file to the `WillowsDad` folder.
+- Import the runelite profile settings `WDBirdhouse.properties` for all the tags.
+- Add `from.WillowsDad.WDBirdhouseRun import OSRSWDBirdhouseRun` to `__init__.py`
+- Code only supports Hammerstone seeds, update that if you want different seeds
+- Make sure camera angle is pitched straight above the player or close to it.
+![image](.\Camera_angle.png)
+```python
+from .WillowsDad.WDBirdhouse import OSRSWDBirdhouse
+
 
 ## Features
 
@@ -121,11 +143,6 @@ Some scripts do things that are "afk-able". This feature simulates that by start
 - If you are on mac change the keys sent.
 - Known issues with the Ultra-Compost pulling focus randomly.
 
-### To-Do
 
-- Fix `adjust_camera()` method to work with threading correctly.
-- Remove afk-feature from parent class since all future bots can't do this (like future combat bot).
-- Create variables for image file paths, and image locations on screen.
-- add an optional bank all button click
   
 

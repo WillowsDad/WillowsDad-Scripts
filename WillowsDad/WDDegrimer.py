@@ -12,7 +12,7 @@ import random
 
 class OSRSWDDegrimer(WillowsDadBot):
     def __init__(self):
-        bot_title = "WD Degrimer"
+        bot_title = "WillowsDad Degrimer"
         description = "Place this near a bank with ingredients and it will degrime your herbs."
         super().__init__(bot_title=bot_title, description=description)
         # Set option variables below (initial value is only used during UI-less testing)
@@ -138,7 +138,7 @@ class OSRSWDDegrimer(WillowsDadBot):
             minutes_since_last_break = int((time.time() - self.last_break) / 60)
             seconds = int(time.time() - self.last_break) % 60
             percentage = (self.multiplier * .01)  # this is the percentage chance of a break
-            deposit_slots = self.api_m.get_first_occurrence(self.deposit_ids)
+            deposit_slots = self.api_m.get_inv_item_first_indice(self.deposit_ids)
             self.roll_chance_passed = False
 
             try:
