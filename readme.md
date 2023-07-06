@@ -36,7 +36,7 @@ from .WillowsDad.WillowsDad_bot import WillowsDadBot
 from .WillowsDad.WDMining import OSRSWDMining
 ```
 - Make the follow ***2*** changes to `\OSRS-Bot-COLOR\src\OSBC.py`
-![](.\osbcmodification1.png) ![](.\osbcmodification2.png)
+![](osbcmodification1.png) ![](osbcmodification2.png)
 - Now all the bots should show up next time you load OSBC!
 - All the needed PNGs are included in the folder already.
 
@@ -120,7 +120,7 @@ Will log in and out to perform birdhouse runs.
 - Add `from.WillowsDad.WDBirdhouseRun import OSRSWDBirdhouseRun` to `__init__.py`
 - Code only supports Hammerstone seeds, update that if you want different seeds
 - Make sure camera angle is pitched straight above the player or close to it.
-![image](.\Camera_angle.png)
+![image](Camera_angle.png)
 ```python
 from .WillowsDad.WDBirdhouse import OSRSWDBirdhouse
 
